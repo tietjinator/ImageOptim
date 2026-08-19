@@ -46,11 +46,17 @@ struct MainChromeView: View {
             .truncationMode(.tail)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if store.isBusy {
-                ProgressView()
-                    .controlSize(.small)
-                    .frame(width: 16, height: 16)
-            }
+            // Both this spinner and the Settings button below flip on the same isBusy change,
+            // on either side of the Again button. Conditionally inserting/removing two sibling
+            // views on the same state change, with no reserved space, is exactly what produced
+            // an overlapping transition frame right as a job finished (isBusy true -> false)
+            // and Settings needed to fade in at the same moment the spinner needed to
+            // disappear. Fixed space + opacity instead of insertion/removal — the HStack's
+            // layout can never shift here, so there's nothing for a transient frame to overlap.
+            ProgressView()
+                .controlSize(.small)
+                .frame(width: 16, height: 16)
+                .opacity(store.isBusy ? 1 : 0)
 
             Button {
                 onAgain(NSEvent.modifierFlags.contains(.option))
@@ -60,13 +66,13 @@ struct MainChromeView: View {
             .help("Run optimizations again")
             .disabled(store.rows.isEmpty)
 
-            if !store.isBusy {
-                Button(action: onSettings) {
-                    Image(systemName: "ellipsis.circle")
-                }
-                .help("Settings")
-                .accessibilityLabel("Show settings")
+            Button(action: onSettings) {
+                Image(systemName: "ellipsis.circle")
             }
+            .help("Settings")
+            .accessibilityLabel("Show settings")
+            .opacity(store.isBusy ? 0 : 1)
+            .disabled(store.isBusy)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
