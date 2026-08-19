@@ -46,17 +46,12 @@ struct MainChromeView: View {
             .truncationMode(.tail)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Both this spinner and the Settings button below flip on the same isBusy change,
-            // on either side of the Again button. Conditionally inserting/removing two sibling
-            // views on the same state change, with no reserved space, is exactly what produced
-            // an overlapping transition frame right as a job finished (isBusy true -> false)
-            // and Settings needed to fade in at the same moment the spinner needed to
-            // disappear. Fixed space + opacity instead of insertion/removal — the HStack's
-            // layout can never shift here, so there's nothing for a transient frame to overlap.
-            ProgressView()
-                .controlSize(.small)
-                .frame(width: 16, height: 16)
-                .opacity(store.isBusy ? 1 : 0)
+            Group {
+                if store.isBusy {
+                    BusySpinner()
+                }
+            }
+            .frame(width: 16, height: 16)
 
             Button {
                 onAgain(NSEvent.modifierFlags.contains(.option))
@@ -71,10 +66,30 @@ struct MainChromeView: View {
             }
             .help("Settings")
             .accessibilityLabel("Show settings")
+            .frame(width: 24, height: 24)
             .opacity(store.isBusy ? 0 : 1)
+            .animation(nil, value: store.isBusy)
             .disabled(store.isBusy)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
+    }
+}
+
+private struct BusySpinner: View {
+    @State private var isRotating = false
+
+    var body: some View {
+        Circle()
+            .trim(from: 0, to: 0.75)
+            .stroke(Color.secondary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            .frame(width: 12, height: 12)
+            .rotationEffect(.degrees(isRotating ? 360 : 0))
+            .onAppear {
+                isRotating = false
+                withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
+                    isRotating = true
+                }
+            }
     }
 }

@@ -282,6 +282,12 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     againButton.hidden = YES;
     settingsButton.hidden = YES;
 
+    // settingsButton alone (of these five) still has a live Cocoa Binding from the xib —
+    // hidden <- isBusy — so a one-time .hidden = YES only wins until isBusy next changes;
+    // the binding's KVO then re-shows the old button at its xib position, on top of the new
+    // SwiftUI Again button. Unbind to make the hide permanent.
+    [settingsButton unbind:NSHiddenBinding];
+
     [container addSubview:chromeView];
     [NSLayoutConstraint activateConstraints:@[
         [chromeView.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
