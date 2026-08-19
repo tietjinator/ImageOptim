@@ -1060,6 +1060,7 @@
 				0F49A900A2A7F96CBDA424BF /* PreferencesWindowFactory.swift */,
 			);
 			name = SwiftUI;
+			path = SwiftUI;
 			sourceTree = "<group>";
 		};
 		5ABE15441AE5072300861C6B /* Supporting Files */ = {

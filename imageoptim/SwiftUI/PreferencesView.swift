@@ -82,29 +82,27 @@ private struct GeneralTab: View {
     var body: some View {
         Form {
             Section("Enable") {
-                Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
-                    GridRow {
-                        Toggle("Gifsicle", isOn: $gifsicleEnabled)
-                        Toggle("JPEGOptim", isOn: $jpegOptimEnabled)
-                    }
-                    GridRow {
-                        Toggle("PNGOUT", isOn: $pngOutEnabled)
-                        Toggle("Jpegtran", isOn: $jpegTranEnabled)
-                    }
-                    GridRow {
-                        Toggle("OxiPNG", isOn: $oxiPngEnabled)
-                        Toggle("SVGO", isOn: $svgoEnabled)
-                            .disabled(!Self.nodeIsInstalled)
-                            .help(Self.nodeIsInstalled ? "" : "SVGO requires Node.js (install via Homebrew: brew install node)")
-                    }
-                    GridRow {
-                        Toggle("AdvPNG", isOn: $advPngEnabled)
-                        Toggle("svgcleaner", isOn: $svgcleanerEnabled)
-                    }
-                    GridRow {
-                        Toggle("Zopfli", isOn: $zopfliEnabled)
-                        Toggle("Guetzli", isOn: $guetzliEnabled)
-                    }
+                HStack(spacing: 24) {
+                    Toggle("Gifsicle", isOn: $gifsicleEnabled)
+                    Toggle("JPEGOptim", isOn: $jpegOptimEnabled)
+                }
+                HStack(spacing: 24) {
+                    Toggle("PNGOUT", isOn: $pngOutEnabled)
+                    Toggle("Jpegtran", isOn: $jpegTranEnabled)
+                }
+                HStack(spacing: 24) {
+                    Toggle("OxiPNG", isOn: $oxiPngEnabled)
+                    Toggle("SVGO", isOn: $svgoEnabled)
+                        .disabled(!Self.nodeIsInstalled)
+                        .help(Self.nodeIsInstalled ? "" : "SVGO requires Node.js (install via Homebrew: brew install node)")
+                }
+                HStack(spacing: 24) {
+                    Toggle("AdvPNG", isOn: $advPngEnabled)
+                    Toggle("svgcleaner", isOn: $svgcleanerEnabled)
+                }
+                HStack(spacing: 24) {
+                    Toggle("Zopfli", isOn: $zopfliEnabled)
+                    Toggle("Guetzli", isOn: $guetzliEnabled)
                 }
             }
 
@@ -145,8 +143,7 @@ private struct GeneralTab: View {
                 Toggle("Bounce dock icon when done", isOn: $bounceDock)
             }
         }
-        .formStyle(.grouped)
-        .onChange(of: guetzliEnabled) { _, isEnabled in
+        .onChange(of: guetzliEnabled) { isEnabled in
             guard isEnabled else {
                 if jpegTranStripAllSetByGuetzli {
                     jpegTranStripAllSetByGuetzli = false
@@ -164,7 +161,7 @@ private struct GeneralTab: View {
                 jpegTranStripAll = true
             }
         }
-        .onChange(of: jpegTranStripAll) { _, stillStrippingAll in
+        .onChange(of: jpegTranStripAll) { stillStrippingAll in
             if guetzliEnabled, !stillStrippingAll {
                 jpegTranStripAllSetByGuetzli = false
                 guetzliEnabled = false
@@ -196,22 +193,37 @@ private struct QualityTab: View {
                     .foregroundStyle(.secondary)
             }
 
-            LabeledContent("PNG quality") {
-                Slider(value: Binding(get: { Double(pngMinQuality) }, set: { pngMinQuality = Int($0) }), in: 0...100, step: 1)
-            }
+            QualitySliderRow(
+                title: "PNG quality",
+                value: Binding(get: { Double(pngMinQuality) }, set: { pngMinQuality = Int($0) })
+            )
             .disabled(!lossyEnabled)
 
-            LabeledContent("JPEG quality") {
-                Slider(value: Binding(get: { Double(jpegMaxQuality) }, set: { jpegMaxQuality = Int($0) }), in: 0...100, step: 1)
-            }
+            QualitySliderRow(
+                title: "JPEG quality",
+                value: Binding(get: { Double(jpegMaxQuality) }, set: { jpegMaxQuality = Int($0) })
+            )
             .disabled(!lossyEnabled || !jpegOptimEnabled)
 
-            LabeledContent("GIF quality") {
-                Slider(value: Binding(get: { Double(gifQuality) }, set: { gifQuality = Int($0) }), in: 0...100, step: 1)
-            }
+            QualitySliderRow(
+                title: "GIF quality",
+                value: Binding(get: { Double(gifQuality) }, set: { gifQuality = Int($0) })
+            )
             .disabled(!lossyEnabled)
         }
-        .formStyle(.grouped)
+    }
+}
+
+// macOS-12-compatible stand-in for LabeledContent (introduced in macOS 13).
+private struct QualitySliderRow: View {
+    let title: String
+    @Binding var value: Double
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Slider(value: $value, in: 0...100, step: 1)
+        }
     }
 }
 
@@ -232,7 +244,9 @@ private struct OptimizationSpeedTab: View {
     var body: some View {
         Form {
             VStack(alignment: .leading, spacing: 8) {
-                LabeledContent("Optimization level") {
+                HStack {
+                    Text("Optimization level")
+                    Spacer()
                     Text(levelLabel).foregroundStyle(.secondary)
                 }
                 Slider(value: $advPngLevel, in: 0...6, step: 1) {
@@ -244,6 +258,5 @@ private struct OptimizationSpeedTab: View {
                 }
             }
         }
-        .formStyle(.grouped)
     }
 }
