@@ -15,6 +15,15 @@ extern NSDictionary *statusImages;
     IBOutlet NSTextField *statusBarLabel;
     IBOutlet NSTextView *credits;
 
+    // Bottom control strip, replaced at runtime (in -awakeFromNib) with a SwiftUI
+    // MainChromeView hosted over this same region — see ImageOptimController.m and
+    // SwiftUI/MainChromeView.swift. These AppKit controls stay in the xib, hidden, so the
+    // rest of the window (menus, table, drag-and-drop) is untouched by this migration step.
+    IBOutlet NSButton *addButton;
+    IBOutlet NSProgressIndicator *chromeProgressIndicator;
+    IBOutlet NSButton *againButton;
+    IBOutlet NSButton *settingsButton;
+
     IBOutlet NSTableColumn *fileColumn, *sizeColumn, *originalSizeColumn, *savingsColumn, *bestToolColumn;
 
     QLPreviewPanel *previewPanel;

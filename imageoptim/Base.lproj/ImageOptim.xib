@@ -702,12 +702,16 @@ CA
         </menu>
         <customObject id="230" customClass="ImageOptimController">
             <connections>
+                <outlet property="addButton" destination="423" id="cs1-cQ-cAo"/>
+                <outlet property="againButton" destination="586" id="dW3-yR-Fk9"/>
                 <outlet property="bestToolColumn" destination="771" id="yJB-bn-Bu0"/>
+                <outlet property="chromeProgressIndicator" destination="428" id="eX7-hM-2pB"/>
                 <outlet property="credits" destination="530" id="707"/>
                 <outlet property="fileColumn" destination="238" id="Aya-HA-Hia"/>
                 <outlet property="filesController" destination="251" id="274"/>
                 <outlet property="originalSizeColumn" destination="795" id="Fip-0O-tR1"/>
                 <outlet property="savingsColumn" destination="243" id="a1E-Oi-JZA"/>
+                <outlet property="settingsButton" destination="Chx-W4-45F" id="fY8-nQ-3rC"/>
                 <outlet property="sizeColumn" destination="239" id="u4r-2K-YDt"/>
                 <outlet property="statusBarLabel" destination="294" id="700"/>
                 <outlet property="tableView" destination="237" id="242"/>

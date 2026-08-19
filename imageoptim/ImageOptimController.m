@@ -8,11 +8,14 @@
 #import "PrefsController.h"
 #import "MyTableView.h"
 #import "SharedPrefs.h"
+#import "ImageOptim-Swift.h"
 #include <mach/mach_host.h>
 #include <mach/host_info.h>
 #import <Quartz/Quartz.h>
 
-@implementation ImageOptimController
+@implementation ImageOptimController {
+    FileListStore *chromeStore;
+}
 
 extern int quitWhenDone;
 
@@ -201,8 +204,8 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
         }
 
         dispatch_async(dispatch_get_main_queue(), ^() {
-            [self->statusBarLabel setStringValue:str];
-            [self->statusBarLabel setSelectable:selectable];
+            self->chromeStore.statusText = str;
+            self->chromeStore.statusSelectable = selectable;
         });
         usleep(100000); // 1/10th of a sec to avoid updating statusbar as fast as possible (100% cpu on the statusbar alone is ridiculous)
     });
@@ -241,6 +244,47 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     // this creates and sets the text for textview
     [self performSelectorInBackground:@selector(loadCreditsHTML:) withObject:nil];
     [credits addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:nil];
+
+    [self installSwiftChrome];
+}
+
+// Hides the AppKit bottom control strip (Add/status/progress/Again/Settings, still present in
+// the xib) and hosts SwiftUI/MainChromeView.swift in its place. See MainChromeView.swift for
+// why this is done at runtime instead of by editing the xib's view hierarchy directly.
+- (void)installSwiftChrome {
+    FileListStore *store = [[FileListStore alloc] initWithFilesController:filesController];
+    chromeStore = store;
+
+    FilesController *fc = filesController;
+    __weak typeof(self) weakSelf = self;
+    NSViewController *chromeVC = [MainChromeViewFactory makeViewControllerWithStore:store
+        onAdd:^{
+            [weakSelf browseForFiles:nil];
+        }
+        onAgain:^(BOOL optimizedOnly) {
+            [fc startAgainOptimized:optimizedOnly];
+        }
+        onSettings:^{
+            [weakSelf showLossyPrefs:nil];
+        }];
+
+    NSView *container = addButton.superview;
+    NSView *chromeView = chromeVC.view;
+    chromeView.translatesAutoresizingMaskIntoConstraints = NO;
+
+    addButton.hidden = YES;
+    statusBarLabel.hidden = YES;
+    chromeProgressIndicator.hidden = YES;
+    againButton.hidden = YES;
+    settingsButton.hidden = YES;
+
+    [container addSubview:chromeView];
+    [NSLayoutConstraint activateConstraints:@[
+        [chromeView.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
+        [chromeView.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
+        [chromeView.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
+        [chromeView.heightAnchor constraintEqualToConstant:39],
+    ]];
 }
 
 - (void)loadCreditsHTML:(id)_unused {

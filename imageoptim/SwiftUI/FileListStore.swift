@@ -17,7 +17,7 @@ import Foundation
 private let observedKeyPaths = ["arrangedObjects", "isBusy", "isStoppable"]
 
 @MainActor
-final class FileListStore: NSObject, ObservableObject {
+@objc final class FileListStore: NSObject, ObservableObject {
     private let filesController: FilesController
     private var isObserving = false
 
@@ -25,7 +25,14 @@ final class FileListStore: NSObject, ObservableObject {
     @Published private(set) var isBusy: Bool = false
     @Published private(set) var isStoppable: Bool = false
 
-    init(filesController: FilesController) {
+    // Set from ImageOptimController.m's existing status-bar computation (see
+    // -initStatusbarWithDefaults: in ImageOptimController.m), which stays in Objective-C
+    // since it's a throttled/coalesced dispatch_source-driven computation over the file
+    // list, not really "UI" — only where the result is displayed moves to SwiftUI.
+    @objc @Published var statusText: String = ""
+    @objc @Published var statusSelectable: Bool = false
+
+    @objc init(filesController: FilesController) {
         self.filesController = filesController
         super.init()
 
