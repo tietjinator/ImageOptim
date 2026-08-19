@@ -15,6 +15,7 @@ enum IOFileType {
     FILETYPE_JPEG,
     FILETYPE_GIF,
     FILETYPE_SVG,
+    FILETYPE_HEIC,
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -24,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (nullable instancetype)initWithData:(NSData *)fileData fromPath:(NSURL *)path;
+- (nullable instancetype)initWithType:(enum IOFileType)type size:(NSUInteger)size fromPath:(NSURL *)path;
 
 // This is not copying, but only creates an instance poiting to the new place
 // If size is given, it aviods disk accesss

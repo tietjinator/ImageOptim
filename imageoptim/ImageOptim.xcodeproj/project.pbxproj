@@ -102,6 +102,7 @@
 		5FFC9752275843210035D0A2 /* svgcleaner in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FFC9750275843160035D0A2 /* svgcleaner */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		D047E4651E7C3D7C0036F96B /* GuetzliWorker.m in Sources */ = {isa = PBXBuildFile; fileRef = D047E4641E7C3D7C0036F96B /* GuetzliWorker.m */; };
+		666C4AD79B66963A3772C1C9 /* HeicToJpegWorker.m in Sources */ = {isa = PBXBuildFile; fileRef = 6EB26A97485037651EECB2CC /* HeicToJpegWorker.m */; };
 		D047E5311E7D90DD0036F96B /* guetzli in CopyFiles */ = {isa = PBXBuildFile; fileRef = D047E4861E7D7E310036F96B /* guetzli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -617,6 +618,8 @@
 		8D1107320486CEB800E47090 /* ImageOptim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImageOptim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D047E4491E7C3CE70036F96B /* GuetzliWorker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GuetzliWorker.h; sourceTree = "<group>"; };
 		D047E4641E7C3D7C0036F96B /* GuetzliWorker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GuetzliWorker.m; sourceTree = "<group>"; };
+		C76DA061E3CFED4D6A2FF7FF /* HeicToJpegWorker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeicToJpegWorker.h; sourceTree = "<group>"; };
+		6EB26A97485037651EECB2CC /* HeicToJpegWorker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HeicToJpegWorker.m; sourceTree = "<group>"; };
 		D047E47C1E7D7DF00036F96B /* guetzli.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = guetzli.xcodeproj; path = ../guetzli/guetzli.xcodeproj; sourceTree = "<group>"; };
 		F8C4ABCD1755C91B004FC041 /* ko */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ko; path = ko.lproj/Help; sourceTree = "<group>"; };
 		F8C4ABCF1755C91B004FC041 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -976,6 +979,8 @@
 				5A4DC21A1028AE1800A9DD55 /* GifsicleWorker.m */,
 				D047E4491E7C3CE70036F96B /* GuetzliWorker.h */,
 				D047E4641E7C3D7C0036F96B /* GuetzliWorker.m */,
+				C76DA061E3CFED4D6A2FF7FF /* HeicToJpegWorker.h */,
+				6EB26A97485037651EECB2CC /* HeicToJpegWorker.m */,
 				5A9E5B290CB961E000E05D28 /* JpegoptimWorker.h */,
 				5A9E5B2A0CB961E000E05D28 /* JpegoptimWorker.m */,
 				5A6E04410EA40B6A00380DE7 /* JpegtranWorker.h */,
@@ -1433,6 +1438,7 @@
 				5AD033541E26B6840030291A /* File.m in Sources */,
 				5ABE157B1AE5073E00861C6B /* GifsicleWorker.m in Sources */,
 				D047E4651E7C3D7C0036F96B /* GuetzliWorker.m in Sources */,
+				666C4AD79B66963A3772C1C9 /* HeicToJpegWorker.m in Sources */,
 				5ABE15741AE5073100861C6B /* Job.m in Sources */,
 				5A34D09A1AEF75CE00A154E4 /* JobQueue.m in Sources */,
 				5ABE157C1AE5073E00861C6B /* JpegoptimWorker.m in Sources */,

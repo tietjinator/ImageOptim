@@ -140,6 +140,7 @@ private struct ToolsPane: View {
     @AppStorage("SvgoEnabled") private var svgoEnabled = true
     @AppStorage("SvgcleanerEnabled") private var svgcleanerEnabled = true
     @AppStorage("GuetzliEnabled") private var guetzliEnabled = false
+    @AppStorage("HeicToJpegEnabled") private var heicToJpegEnabled = true
 
     // Shadow storage for the Guetzli <-> strip-all-metadata coupling: the real toggle for this
     // key is shown in MetadataPane, but the side effect needs to happen wherever Guetzli's
@@ -175,6 +176,16 @@ private struct ToolsPane: View {
                 .disabled(!Self.nodeIsInstalled)
                 .help(Self.nodeIsInstalled ? "" : "SVGO requires Node.js (install via Homebrew: brew install node)")
             Toggle("svgcleaner", isOn: $svgcleanerEnabled)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Toggle("Convert HEIC to JPEG", isOn: $heicToJpegEnabled)
+                Text("The original HEIC file is never modified — a new JPEG is written alongside it, then compressed using the JPEG settings above")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .onChange(of: guetzliEnabled) { isEnabled in
             guard isEnabled else {
@@ -244,6 +255,10 @@ private struct MetadataPane: View {
 private struct FilesPane: View {
     @AppStorage("PreservePermissions") private var preservePermissions = true
     @AppStorage("PreserveDates") private var preserveDates = false
+    @AppStorage("FilenamePrefix") private var filenamePrefix = ""
+    @AppStorage("FilenameSuffix") private var filenameSuffix = ""
+    @AppStorage("OutputFolderPath") private var outputFolderPath = ""
+    @AppStorage("PreserveOriginal") private var preserveOriginal = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -257,7 +272,51 @@ private struct FilesPane: View {
             }
 
             Toggle("Preserve file creation and modification dates", isOn: $preserveDates)
+
+            Divider()
+
+            Text("Output").font(.headline)
+
+            HStack {
+                Text("Prefix:")
+                TextField("none", text: $filenamePrefix)
+                    .textFieldStyle(.roundedBorder)
+                Text("Suffix:")
+                TextField("none", text: $filenameSuffix)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            HStack {
+                Text("Folder:")
+                Text(outputFolderPath.isEmpty ? "Same as the original file" : outputFolderPath)
+                    .foregroundStyle(outputFolderPath.isEmpty ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer()
+                Button("Choose…", action: chooseOutputFolder)
+                if !outputFolderPath.isEmpty {
+                    Button("Reset") { outputFolderPath = "" }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Toggle("Preserve original file (save a copy instead of replacing it)", isOn: $preserveOriginal)
+                Text("If no prefix, suffix, or folder is set above, the copy is named with an “-optimized” suffix")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+    }
+
+    private func chooseOutputFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Choose"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        outputFolderPath = url.path
     }
 }
 

@@ -450,6 +450,7 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
 #define JPEG_ENABLED 2
 #define GIF_ENABLED 4
 #define SVG_ENABLED 8
+#define HEIC_ENABLED 16
 
 - (int)typesEnabled {
     int types = 0;
@@ -470,6 +471,10 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
 
     if ([defs boolForKey:@"SvgoEnabled"] || [defs boolForKey:@"SvgcleanerEnabled"]) {
         types |= SVG_ENABLED;
+    }
+
+    if ([defs boolForKey:@"HeicToJpegEnabled"]) {
+        types |= HEIC_ENABLED;
     }
 
     if (!types) types = PNG_ENABLED; // will show error in the list
@@ -494,6 +499,9 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
     if (types & SVG_ENABLED) {
         [extensions addObject:@"svg"];
     }
+    if (types & HEIC_ENABLED) {
+        [extensions addObjectsFromArray:@[ @"heic", @"HEIC", @"heif", @"HEIF" ]];
+    }
 
     return extensions;
 }
@@ -514,6 +522,9 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
     }
     if (types & SVG_ENABLED) {
         [fileTypes addObjectsFromArray:@[ @"svg", @"public.svg-image", @"image/svg" ]];
+    }
+    if (types & HEIC_ENABLED) {
+        [fileTypes addObjectsFromArray:@[ @"heic", @"heif", @"public.heic", @"public.heif", @"image/heic", @"image/heif" ]];
     }
     return fileTypes;
 }

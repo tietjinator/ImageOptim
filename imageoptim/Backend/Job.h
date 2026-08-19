@@ -48,6 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)enqueueWorkersInCPUQueue:(NSOperationQueue *)queue fileIOQueue:(NSOperationQueue *)fileIOQueue serialQueue:(dispatch_queue_t)serialQueue defaults:(NSUserDefaults *)defaults;
 
 - (BOOL)setFileOptimized:(nullable TempFile *)f toolName:(NSString *)s;
+- (BOOL)setFileConverted:(nullable TempFile *)f toolName:(NSString *)s;
 
 - (nullable instancetype)initWithFilePath:(NSURL *)aPath resultsDatabase:(nullable ResultsDb *)aDb;
 - (void)updateStatusOfWorker:(nullable Worker *)currentWorker running:(BOOL)started;

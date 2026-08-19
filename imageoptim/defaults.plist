@@ -38,6 +38,16 @@
 	<true/>
 	<key>PreserveDates</key>
 	<false/>
+	<key>FilenamePrefix</key>
+	<string></string>
+	<key>FilenameSuffix</key>
+	<string></string>
+	<key>OutputFolderPath</key>
+	<string></string>
+	<key>PreserveOriginal</key>
+	<false/>
+	<key>HeicToJpegEnabled</key>
+	<true/>
 	<key>RunConcurrentDirscans</key>
 	<integer>2</integer>
 	<key>RunConcurrentFiles</key>

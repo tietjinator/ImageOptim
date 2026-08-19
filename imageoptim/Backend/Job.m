@@ -18,6 +18,7 @@
 #import "Workers/SvgoWorker.h"
 #import "Workers/SvgcleanerWorker.h"
 #import "Workers/GuetzliWorker.h"
+#import "Workers/HeicToJpegWorker.h"
 #import <sys/xattr.h>
 #import "log.h"
 #include "ResultsDb.h"
@@ -51,6 +52,10 @@
 @implementation Job {
     BOOL preservePermissions;
     BOOL preserveDates;
+    BOOL preserveOriginal;
+    NSString *filenamePrefix;
+    NSString *filenameSuffix;
+    NSString *outputFolderPath;
 }
 
 @synthesize workersPreviousResults, filePath, displayName, statusText, statusOrder, statusImageName, bestToolName, isFailed, isDone;
@@ -116,6 +121,14 @@
 
     if (!optimizedFile || unoptimizedInput == optimizedFile) {
         return NO;
+    }
+
+    // A file-type conversion (HEIC -> JPEG) always counts as worth saving, even though the
+    // re-encoded JPEG is typically *larger* than the source HEIC — HEVC-based HEIC is more
+    // space-efficient than JPEG at equivalent quality, so gating on byte size here would
+    // silently discard every successful conversion.
+    if (optimizedFile->fileType != unoptimizedInput->fileType) {
+        return YES;
     }
 
     return optimizedFile.byteSize < unoptimizedInput.byteSize;
@@ -205,6 +218,30 @@
         }
     }
     return changed;
+}
+
+// Like setFileOptimized:toolName:, but always accepts the new file regardless of size —
+// for workers that change the file's type (HEIC -> JPEG) rather than compress it. Gating on
+// "is the result smaller" would silently discard every successful conversion, since a
+// near-lossless JPEG re-encode of a HEIC photo is typically *larger* than the HEVC-based
+// HEIC source.
+- (BOOL)setFileConverted:(TempFile *)newFile toolName:(NSString *)toolname {
+    if (!newFile) {
+        return NO;
+    }
+
+    @synchronized(self) {
+        File *oldFile = self.wipInput;
+        NSUInteger oldSize = oldFile.byteSize;
+        NSUInteger newSize = newFile.byteSize;
+        IODebug("%@ converted file %@ from %lu to %lu in %@",
+                toolname, _unoptimizedInput.path.path,
+                (unsigned long)oldSize, (unsigned long)newSize,
+                newFile.path.path);
+        [self setFileOptimized:newFile];
+        [self performSelectorOnMainThread:@selector(updateBestToolName:) withObject:[[ToolStats alloc] initWithName:toolname oldSize:oldSize newSize:newSize] waitUntilDone:NO];
+    }
+    return YES;
 }
 
 -(BOOL)removeExtendedAttrAtURL:(NSURL *)path
@@ -312,12 +349,67 @@
     return YES;
 }
 
+// Where the optimized result should actually be written. Defaults to filePath itself
+// (today's only behavior: overwrite in place) unless a prefix/suffix/output folder is
+// configured, in which case it's a different file next to (or in) the configured location.
+// When Preserve Original is on but none of those are set, falls back to an "-optimized"
+// suffix rather than silently writing over the file it's meant to preserve.
+//
+// A HEIC source always gets a "jpg" extension here instead of filePath's own — which, by
+// itself, is what makes saveResult treat it as a different-destination write (never
+// overwriting/trashing the original .heic) without needing a separate special case there:
+// once the extension differs, the "is this destination different from filePath" check below
+// is true unconditionally, regardless of the other output settings.
+- (NSURL *)computeDestinationURL {
+    BOOL isHeicConversion = self.unoptimizedInput->fileType == FILETYPE_HEIC;
+    NSString *ext = isHeicConversion ? @"jpg" : filePath.pathExtension;
+    NSString *base = filePath.lastPathComponent.stringByDeletingPathExtension;
+
+    NSString *prefix = filenamePrefix ?: @"";
+    NSString *suffix = filenameSuffix ?: @"";
+    BOOL noCustomNaming = prefix.length == 0 && suffix.length == 0;
+    BOOL noCustomFolder = outputFolderPath.length == 0;
+
+    if (preserveOriginal && noCustomNaming && noCustomFolder) {
+        suffix = @"-optimized";
+    }
+
+    NSString *newName = [[prefix stringByAppendingString:base] stringByAppendingString:suffix];
+    NSURL *destDir = noCustomFolder ? [filePath URLByDeletingLastPathComponent] : [NSURL fileURLWithPath:outputFolderPath isDirectory:YES];
+    return [[destDir URLByAppendingPathComponent:newName] URLByAppendingPathExtension:ext];
+}
+
 - (BOOL)saveResult {
     File *fileToSave = self.wipInput;
     @try {
         NSFileManager *fm = [NSFileManager defaultManager];
-
         NSError *error = nil;
+
+        // Writing somewhere other than filePath itself (prefix/suffix/output folder, or
+        // Preserve Original's implicit "-optimized" fallback): the original is never trashed,
+        // moved, or overwritten — just copy the optimized bytes to the computed destination
+        // and leave everything about the source file untouched. No revert is tracked, since
+        // there's nothing to revert: the original was never touched.
+        NSURL *destination = [self computeDestinationURL];
+        if (preserveOriginal || ![destination isEqual:filePath]) {
+            NSURL *destEnclosingDir = [destination URLByDeletingLastPathComponent];
+            if (![fm isWritableFileAtPath:destEnclosingDir.path]) {
+                IOWarn("The output folder %@ is not writable", destEnclosingDir.path);
+                return NO;
+            }
+            if ([fm fileExistsAtPath:destination.path]) {
+                [fm removeItemAtURL:destination error:nil];
+            }
+            if (![fm copyItemAtURL:fileToSave.path toURL:destination error:&error]) {
+                IOWarn("Failed to copy optimized file to %@: %@", destination.path, error);
+                return NO;
+            }
+            [destination removeAllCachedResourceValues];
+            self.savedOutput = [fileToSave copyOfPath:destination size:fileToSave.byteSize];
+            [self setFileOptimized:nil];
+            return YES;
+        }
+
         NSURL *moveFromPath = fileToSave.path;
         NSURL *enclosingDir = [filePath URLByDeletingLastPathComponent];
 
@@ -501,6 +593,10 @@
         workers = [[NSMutableArray alloc] initWithCapacity:10];
         preservePermissions = [defaults boolForKey:@"PreservePermissions"];
         preserveDates = [defaults boolForKey:@"PreserveDates"];
+        preserveOriginal = [defaults boolForKey:@"PreserveOriginal"];
+        filenamePrefix = [defaults stringForKey:@"FilenamePrefix"] ?: @"";
+        filenameSuffix = [defaults stringForKey:@"FilenameSuffix"] ?: @"";
+        outputFolderPath = [defaults stringForKey:@"OutputFolderPath"] ?: @"";
 
         BOOL isQueueUnderUtilized = queue.operationCount < queue.maxConcurrentOperationCount;
         if (isQueueUnderUtilized) {
@@ -644,6 +740,26 @@
                 [worker_list addObject:[[SvgcleanerWorker alloc] initWithLossy:lossyEnabled job:self]];
             }
             break;
+        case FILETYPE_HEIC: {
+            if (![defs boolForKey:@"HeicToJpegEnabled"]) {
+                [self setError:NSLocalizedString(@"HEIC conversion is disabled in Preferences", @"tooltip")];
+                [self cleanup];
+                return;
+            }
+
+            // Must run before any of the JPEG workers below — they operate on JPEG bytes
+            // that don't exist until this one produces them. worker_list order matters here:
+            // the runFirst/runLater split further down preserves it for makesNonOptimizingModifications workers.
+            [worker_list addObject:[[HeicToJpegWorker alloc] initWithFile:self]];
+
+            if (!lossyConverted && !hasBeenRunBefore && [defs boolForKey:@"GuetzliEnabled"] && [defs integerForKey:@"JpegOptimMaxQuality"] >= 80) {
+                [worker_list addObject:[[GuetzliWorker alloc] initWithDefaults:defs serialQueue:serialQueue file:self]];
+                lossyConverted = YES;
+            }
+            if ([defs boolForKey:@"JpegOptimEnabled"]) [worker_list addObject:[[JpegoptimWorker alloc] initWithDefaults:defs file:self]];
+            if ([defs boolForKey:@"JpegTranEnabled"]) [worker_list addObject:[[JpegtranWorker alloc] initWithDefaults:defs file:self]];
+            break;
+        }
         default:
             [self setError:NSLocalizedString(@"File is neither PNG, GIF nor JPEG", @"tooltip")];
             [self cleanup];

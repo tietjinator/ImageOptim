@@ -31,7 +31,8 @@
     const unsigned char jpegheader[] = {0xff,0xd8,0xff};
     const unsigned char gifheader[] = {0x47,0x49,0x46,0x38};
     const unsigned char svgheader[] = {'<','s','v','g'};
-    char fileHeaderBytes[6];
+    const unsigned char ftypheader[] = {'f','t','y','p'};
+    char fileHeaderBytes[12];
 
     if (!fileData || fileData.length < sizeof(fileHeaderBytes)) {
         return nil;
@@ -49,6 +50,15 @@
         type = FILETYPE_GIF;
     } else if (0 == memcmp(fileHeaderBytes, svgheader, sizeof(svgheader)) || [aPath.pathExtension isEqualToString:@"svg"]) {
         type = FILETYPE_SVG;
+    } else if (0 == memcmp(fileHeaderBytes + 4, ftypheader, sizeof(ftypheader))) {
+        // ISO-BMFF: a 4-byte box size, then "ftyp", then a 4-byte major brand identifying
+        // the specific format. HEIC/HEIF share this container with plenty of non-image
+        // formats (MP4, MOV, ...) — only recognize the brands Photos/Camera actually use.
+        NSString *brand = [[NSString alloc] initWithBytes:fileHeaderBytes + 8 length:4 encoding:NSASCIIStringEncoding];
+        NSSet<NSString *> *heicBrands = [NSSet setWithArray:@[@"heic", @"heix", @"heim", @"heis", @"hevc", @"hevx", @"mif1", @"msf1"]];
+        if ([heicBrands containsObject:brand]) {
+            type = FILETYPE_HEIC;
+        }
     }
 
     return [self initWithType:type size:fileData.length fromPath:aPath];
@@ -108,6 +118,7 @@
         case FILETYPE_JPEG: return @"image/jpeg";
         case FILETYPE_GIF: return @"image/gif";
         case FILETYPE_SVG: return @"image/svg";
+        case FILETYPE_HEIC: return @"image/heic";
         default:
             return nil;
     }
