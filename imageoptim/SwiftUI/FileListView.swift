@@ -45,6 +45,7 @@ struct FileListView: View {
                         }
                     }
                     .listStyle(.inset)
+                    .accessibilityLabel("List of files to optimize")
                     .onDeleteCommand {
                         store.delete(selectedRows())
                     }
@@ -124,15 +125,20 @@ private struct FileRowView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: 0)
-                if isHovering {
-                    Button {
-                        store.revealInFinder([row])
-                    } label: {
-                        Image(systemName: "arrow.forward.square")
-                    }
-                    .buttonStyle(.plain)
-                    .help(row.jobProxy.filePath.path)
+                // RevealButtonCell.m never actually hides this icon — it draws it at ~30%
+                // opacity at rest and full opacity on hover (drawInteriorWithFrame:). An
+                // appear/disappear button reads as a bigger, more distracting change than
+                // that subtle brighten; keep it always present and animate opacity instead.
+                Button {
+                    store.revealInFinder([row])
+                } label: {
+                    Image(systemName: "arrow.forward.square")
                 }
+                .buttonStyle(.plain)
+                .opacity(isHovering ? 1 : 0.3)
+                .animation(.easeInOut(duration: 0.15), value: isHovering)
+                .help(row.jobProxy.filePath.path)
+                .accessibilityLabel("Reveal in Finder")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -185,6 +191,7 @@ private struct FileRowView: View {
     private var statusIcon: some View {
         if let name = row.statusImageName, let image = NSImage(named: name) {
             Image(nsImage: image)
+                .accessibilityLabel(row.statusText ?? "Status")
         } else {
             Color.clear
         }
@@ -205,5 +212,7 @@ private struct EmptyDropView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.5))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Drop images here")
     }
 }
