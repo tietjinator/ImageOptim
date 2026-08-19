@@ -14,8 +14,12 @@
 //  before but were never exposed in any xib.
 //
 //  Not carried over from the xib: the six per-tool "?" help buttons (they opened anchors in
-//  the help book via tags 1-6) and the disabled/unbound "PNGCrush" checkbox that was present
-//  but not wired to a default in the original UI.
+//  the help book via tags 1-6).
+//
+//  General tab layout mirrors the original's two-pane arrangement (a single-column "Enable"
+//  list, in the original's exact top-to-bottom order — extracted from each checkbox's real y
+//  frame in the old xib, not just document order) beside the metadata/writing/performance
+//  sections, rather than the first pass's arbitrary two-per-row grid.
 //
 
 import SwiftUI
@@ -49,6 +53,7 @@ private struct GeneralTab: View {
     @AppStorage("PngOutEnabled") private var pngOutEnabled = true
     @AppStorage("OptiPngEnabled") private var oxiPngEnabled = true // key predates the OxiPNG rename
     @AppStorage("AdvPngEnabled") private var advPngEnabled = true
+    @AppStorage("PngCrush2Enabled") private var pngCrushEnabled = false
     @AppStorage("ZopfliEnabled") private var zopfliEnabled = true
     @AppStorage("JpegOptimEnabled") private var jpegOptimEnabled = true
     @AppStorage("JpegTranEnabled") private var jpegTranEnabled = true
@@ -80,69 +85,76 @@ private struct GeneralTab: View {
     }
 
     var body: some View {
-        Form {
-            Section("Enable") {
-                HStack(spacing: 24) {
-                    Toggle("Gifsicle", isOn: $gifsicleEnabled)
-                    Toggle("JPEGOptim", isOn: $jpegOptimEnabled)
+        HStack(alignment: .top, spacing: 32) {
+            // Single column, in the original's real top-to-bottom order (recovered from each
+            // checkbox's y frame in Base.lproj/PrefsController.xib, not document order).
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Enable")
+                    .font(.headline)
+                Toggle("Zopfli", isOn: $zopfliEnabled)
+                Toggle("PNGOUT", isOn: $pngOutEnabled)
+                Toggle("OxiPNG", isOn: $oxiPngEnabled)
+                Toggle("AdvPNG", isOn: $advPngEnabled)
+                Toggle("PNGCrush", isOn: $pngCrushEnabled)
+                Toggle("JPEGOptim", isOn: $jpegOptimEnabled)
+                Toggle("Jpegtran", isOn: $jpegTranEnabled)
+                Toggle("Guetzli", isOn: $guetzliEnabled)
+                Toggle("Gifsicle", isOn: $gifsicleEnabled)
+                Toggle("SVGO", isOn: $svgoEnabled)
+                    .disabled(!Self.nodeIsInstalled)
+                    .help(Self.nodeIsInstalled ? "" : "SVGO requires Node.js (install via Homebrew: brew install node)")
+                Toggle("svgcleaner", isOn: $svgcleanerEnabled)
+            }
+            .frame(width: 150, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Metadata and color profiles")
+                        .font(.headline)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle("Strip PNG metadata (gamma, color profiles, optional chunks)", isOn: $pngOutRemoveChunks)
+                        Text("Web browsers require gamma chunks to be removed")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle("Strip JPEG metadata (EXIF, color profiles, GPS, rotation, etc.)", isOn: $jpegTranStripAll)
+                        Text("Not recommended if you rely on embedded copyright information")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                HStack(spacing: 24) {
-                    Toggle("PNGOUT", isOn: $pngOutEnabled)
-                    Toggle("Jpegtran", isOn: $jpegTranEnabled)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Writing files to disk")
+                        .font(.headline)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle("Preserve file permissions, attributes and hardlinks", isOn: $preservePermissions)
+                        Text("Saving to network drives is faster when permissions are not preserved")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Toggle("Preserve file creation and modification dates", isOn: $preserveDates)
                 }
-                HStack(spacing: 24) {
-                    Toggle("OxiPNG", isOn: $oxiPngEnabled)
-                    Toggle("SVGO", isOn: $svgoEnabled)
-                        .disabled(!Self.nodeIsInstalled)
-                        .help(Self.nodeIsInstalled ? "" : "SVGO requires Node.js (install via Homebrew: brew install node)")
-                }
-                HStack(spacing: 24) {
-                    Toggle("AdvPNG", isOn: $advPngEnabled)
-                    Toggle("svgcleaner", isOn: $svgcleanerEnabled)
-                }
-                HStack(spacing: 24) {
-                    Toggle("Zopfli", isOn: $zopfliEnabled)
-                    Toggle("Guetzli", isOn: $guetzliEnabled)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Performance")
+                        .font(.headline)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle("Run in low priority", isOn: $runLowPriority)
+                        Text("On Apple Silicon this confines compression to the slow efficiency cores — leave off unless you need ImageOptim to stay out of the way of other work")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Stepper("Concurrent files: \(runConcurrentFiles)", value: $runConcurrentFiles, in: 1...16)
+                    Stepper("Concurrent folder scans: \(runConcurrentDirscans)", value: $runConcurrentDirscans, in: 1...8)
+                    Toggle("Bounce dock icon when done", isOn: $bounceDock)
                 }
             }
 
-            Section("Metadata and color profiles") {
-                VStack(alignment: .leading, spacing: 2) {
-                    Toggle("Strip PNG metadata (gamma, color profiles, optional chunks)", isOn: $pngOutRemoveChunks)
-                    Text("Web browsers require gamma chunks to be removed")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Toggle("Strip JPEG metadata (EXIF, color profiles, GPS, rotation, etc.)", isOn: $jpegTranStripAll)
-                    Text("Not recommended if you rely on embedded copyright information")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Writing files to disk") {
-                VStack(alignment: .leading, spacing: 2) {
-                    Toggle("Preserve file permissions, attributes and hardlinks", isOn: $preservePermissions)
-                    Text("Saving to network drives is faster when permissions are not preserved")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Toggle("Preserve file creation and modification dates", isOn: $preserveDates)
-            }
-
-            Section("Performance") {
-                VStack(alignment: .leading, spacing: 2) {
-                    Toggle("Run in low priority", isOn: $runLowPriority)
-                    Text("On Apple Silicon this confines compression to the slow efficiency cores — leave off unless you need ImageOptim to stay out of the way of other work")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Stepper("Concurrent files: \(runConcurrentFiles)", value: $runConcurrentFiles, in: 1...16)
-                Stepper("Concurrent folder scans: \(runConcurrentDirscans)", value: $runConcurrentDirscans, in: 1...8)
-                Toggle("Bounce dock icon when done", isOn: $bounceDock)
-            }
+            Spacer(minLength: 0)
         }
+        .padding(.top, 8)
         .onChange(of: guetzliEnabled) { isEnabled in
             guard isEnabled else {
                 if jpegTranStripAllSetByGuetzli {
@@ -185,7 +197,7 @@ private struct QualityTab: View {
     @AppStorage("GifQuality") private var gifQuality = 80
 
     var body: some View {
-        Form {
+        VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
                 Toggle("Enable lossy minification", isOn: $lossyEnabled)
                 Text("Makes files much smaller, but may change how images look")
@@ -193,36 +205,62 @@ private struct QualityTab: View {
                     .foregroundStyle(.secondary)
             }
 
-            QualitySliderRow(
-                title: "PNG quality",
-                value: Binding(get: { Double(pngMinQuality) }, set: { pngMinQuality = Int($0) })
-            )
-            .disabled(!lossyEnabled)
-
+            // JPEG full-width above PNG/GIF side by side, matching the original layout.
             QualitySliderRow(
                 title: "JPEG quality",
-                value: Binding(get: { Double(jpegMaxQuality) }, set: { jpegMaxQuality = Int($0) })
+                value: Binding(get: { Double(jpegMaxQuality) }, set: { jpegMaxQuality = Int($0) }),
+                minLabel: "50%", maxLabel: "99%"
             )
             .disabled(!lossyEnabled || !jpegOptimEnabled)
 
-            QualitySliderRow(
-                title: "GIF quality",
-                value: Binding(get: { Double(gifQuality) }, set: { gifQuality = Int($0) })
-            )
-            .disabled(!lossyEnabled)
+            HStack(alignment: .top, spacing: 32) {
+                QualitySliderRow(
+                    title: "PNG quality",
+                    value: Binding(get: { Double(pngMinQuality) }, set: { pngMinQuality = Int($0) }),
+                    minLabel: "40%", maxLabel: "100%"
+                )
+                .disabled(!lossyEnabled)
+
+                QualitySliderRow(
+                    title: "GIF quality",
+                    value: Binding(get: { Double(gifQuality) }, set: { gifQuality = Int($0) }),
+                    minLabel: "40%", maxLabel: "100%"
+                )
+                .disabled(!lossyEnabled)
+            }
         }
+        .padding(.top, 8)
     }
 }
 
-// macOS-12-compatible stand-in for LabeledContent (introduced in macOS 13).
+// macOS-12-compatible stand-in for LabeledContent (introduced in macOS 13), extended with the
+// current-value readout and min/max tick labels the original's AppKit slider showed natively.
 private struct QualitySliderRow: View {
     let title: String
     @Binding var value: Double
+    let minLabel: String
+    let maxLabel: String
 
     var body: some View {
-        HStack {
-            Text(title)
-            Slider(value: $value, in: 0...100, step: 1)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(title)
+                    .frame(width: 90, alignment: .leading)
+                Slider(value: $value, in: 0...100, step: 1)
+                Text("\(Int(value))%")
+                    .frame(width: 34, alignment: .trailing)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            HStack {
+                Text(minLabel)
+                Spacer()
+                Text(maxLabel)
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .padding(.leading, 94)
+            .padding(.trailing, 34)
         }
     }
 }
@@ -242,21 +280,30 @@ private struct OptimizationSpeedTab: View {
     }
 
     var body: some View {
-        Form {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Optimization level")
-                    Spacer()
-                    Text(levelLabel).foregroundStyle(.secondary)
-                }
-                Slider(value: $advPngLevel, in: 0...6, step: 1) {
-                    Text("Optimization level")
-                } minimumValueLabel: {
-                    Text("Fast").font(.caption)
-                } maximumValueLabel: {
-                    Text("Insane").font(.caption)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Optimization level")
+                Spacer()
+                Text(levelLabel).foregroundStyle(.secondary)
             }
+            // Plain Slider (no label/minimumValueLabel/maximumValueLabel closures): on macOS,
+            // unlike iOS, that "label" closure renders as a second visible title next to the
+            // slider rather than staying accessibility-only — using it duplicated "Optimization
+            // level" on screen. Four hand-laid-out labels below instead, matching the
+            // original's evenly spaced Fast/Normal/Extra/Insane row under its 7-tick slider.
+            Slider(value: $advPngLevel, in: 0...6, step: 1)
+            HStack {
+                Text("Fast")
+                Spacer()
+                Text("Normal")
+                Spacer()
+                Text("Extra")
+                Spacer()
+                Text("Insane")
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
         }
+        .padding(.top, 8)
     }
 }
