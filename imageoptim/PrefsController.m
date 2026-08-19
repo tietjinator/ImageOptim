@@ -2,90 +2,49 @@
 //  PrefsController.m
 //
 //  Created by porneL on 24.wrz.07.
+//  SwiftUI rewrite: builds its window in code and hosts PreferencesView (SwiftUI) instead of
+//  loading Base.lproj/PrefsController.xib. All the behavior that used to live in this file's
+//  KVO observer on NSUserDefaults (Guetzli slowness warning, Guetzli <-> JpegTranStripAll
+//  cross-coupling) now lives in PreferencesView's .onChange handlers — see
+//  SwiftUI/PreferencesView.swift.
 //
 
 #import "PrefsController.h"
 #import "ImageOptimController.h"
-#import "Transformers.h"
+#import "ImageOptim-Swift.h"
 
-static const char *kGuetzliContext = "guetzli";
-static const char *kStripAllContext = "strip";
+@interface PrefsController ()
+@property (nonatomic, strong) PreferencesTabSelection *tabSelection;
+@end
 
 @implementation PrefsController
 
 - (instancetype)init {
-    if ((self = [super initWithWindowNibName:@"PrefsController"])) {
-        CeilFormatter *cf = [CeilFormatter new];
-        [NSValueTransformer setValueTransformer:cf forName:@"CeilFormatter"];
+    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 620, 460)
+                                                     styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable)
+                                                       backing:NSBackingStoreBuffered
+                                                         defer:NO];
+    window.title = NSLocalizedString(@"ImageOptim Preferences", @"prefs window title");
+    window.releasedWhenClosed = NO;
 
-        DisabledColor *dc = [DisabledColor new];
-        [NSValueTransformer setValueTransformer:dc forName:@"DisabledColor"];
-
-        [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:@"GuetzliEnabled" options:0 context:(void *)kGuetzliContext];
-        [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:@"JpegTranStripAll" options:0 context:(void *)kStripAllContext];
+    if ((self = [super initWithWindow:window])) {
+        _tabSelection = [PreferencesTabSelection new];
+        window.contentViewController = [PreferencesWindowFactory makeViewControllerWithTabSelection:_tabSelection];
+        [window center];
     }
     return self;
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)defaults
-                        change:(NSDictionary *)change
-                       context:(void *)context {
-    if (context == (void *)kGuetzliContext) {
-        if ([defaults boolForKey:@"GuetzliEnabled"]) {
-            if (!notified) {
-                notified = YES;
-                [self warnGuetzliSlowness];
-            }
-            if ([defaults integerForKey:@"JpegOptimMaxQuality"] < 85) {
-                [defaults setInteger:85 forKey:@"JpegOptimMaxQuality"];
-            }
-            if (![defaults boolForKey:@"JpegTranStripAll"]) {
-                [defaults setBool:YES forKey:@"JpegTranStripAllSetByGuetzli"];
-                [defaults setBool:YES forKey:@"JpegTranStripAll"];
-            }
-        } else if ([defaults boolForKey:@"JpegTranStripAll"] && [defaults boolForKey:@"JpegTranStripAllSetByGuetzli"]) {
-            [defaults setBool:NO forKey:@"JpegTranStripAllSetByGuetzli"];
-            [defaults setBool:NO forKey:@"JpegTranStripAll"];
-        }
-    } else if (context == (void *)kStripAllContext) {
-        if ([defaults boolForKey:@"GuetzliEnabled"] && ![defaults boolForKey:@"JpegTranStripAll"]) {
-            [defaults setBool:NO forKey:@"JpegTranStripAllSetByGuetzli"];
-            [defaults setBool:NO forKey:@"GuetzliEnabled"];
-        }
-    }
-}
-
-- (void)warnGuetzliSlowness {
-    NSAlert *alert = [NSAlert new];
-    alert.alertStyle = NSAlertStyleWarning;
-    alert.messageText = NSLocalizedString(@"Guetzli is very slow", "alert box");
-    alert.informativeText = NSLocalizedString(@"It can take up to 30 minutes per image. Your system may be unresponsive while Guetzli is running.", "alert box");
-    [alert beginSheetModalForWindow:[self window] completionHandler:nil];
-}
-
 - (IBAction)showLossySettings:(id)sender {
     [self showWindow:sender];
-    [self.tabs selectTabViewItemAtIndex:1];
+    [self.tabSelection selectQualityTab];
 }
 
 - (IBAction)showHelp:(id)sender {
-    NSInteger tag = [sender tag];
-
     [[self window] setHidesOnDeactivate:NO];
 
     NSString *locBookName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleHelpBookName"];
-    NSString *anchors[] = { @"general", @"jpegoptim", @"optipng", @"optipng", @"pngcrush", @"pngout" };
-    NSString *anchor = @"main";
-
-    if (tag >= 1 && tag <= 6) {
-        anchor = anchors[tag - 1];
-    }
-    [[NSHelpManager sharedHelpManager] openHelpAnchor:anchor inBook:locBookName];
+    [[NSHelpManager sharedHelpManager] openHelpAnchor:@"main" inBook:locBookName];
 }
 
-// This doesn't belong here :(
-- (BOOL)svgSupported {
-    NSFileManager *fm = [NSFileManager defaultManager];
-    return [fm isExecutableFileAtPath:@"/usr/local/bin/node"] || [fm isExecutableFileAtPath:@"/opt/homebrew/bin/node"];
-}
 @end

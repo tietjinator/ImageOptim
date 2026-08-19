@@ -31,7 +31,6 @@
 		5A6242080CA86DC7005942A3 /* PrefsController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5A6242070CA86DC7005942A3 /* PrefsController.m */; };
 		5A6A56D01B497E210045AA0C /* SharedPrefs.m in Sources */ = {isa = PBXBuildFile; fileRef = 5A1F3CEE1B489796006570E0 /* SharedPrefs.m */; };
 		5A714AAD0CB0196A00C242C0 /* MyTableView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5A714AAC0CB0196A00C242C0 /* MyTableView.m */; };
-		5A7D24E213E5BC3100815AAA /* PrefsController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5A45530D1024EB3000A69944 /* PrefsController.xib */; };
 		5A7D24E313E5BC3100815AAA /* ImageOptim.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5A45530A1024EB1100A69944 /* ImageOptim.xib */; };
 		5A7D24E513E5BC3100815AAA /* Help in Resources */ = {isa = PBXBuildFile; fileRef = 5A95FEBE0CB8041A00737B79 /* Help */; };
 		5A7D24E613E5BC3100815AAA /* err.png in Resources */ = {isa = PBXBuildFile; fileRef = 5A9EE4490CB59CDC00F08CC5 /* err.png */; };
@@ -83,6 +82,9 @@
 		5ABE16D21AE5AD9F00861C6B /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 5ABE16D11AE5AD9F00861C6B /* log.c */; };
 		AC8152D5A7507ED970396115 /* FileListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25FF00274ED4381473A97D7 /* FileListStore.swift */; };
 		A4B2A507211BB5F3E76C728C /* ScaffoldPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5C4CC83E794E2EC57719D0 /* ScaffoldPlaceholderView.swift */; };
+		FE66CA67C96B53B3B55AEA08 /* PreferencesTabSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79299E5172557756412B8461 /* PreferencesTabSelection.swift */; };
+		D7F9726960552494B2A6D721 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4EFFD2F18CD3646BEB7F507 /* PreferencesView.swift */; };
+		220D54DB82DF6DE28B4BEA67 /* PreferencesWindowFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F49A900A2A7F96CBDA424BF /* PreferencesWindowFactory.swift */; };
 		5AC4CBB31AF3FFA10003AEA2 /* ImageOptimGPL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5ABE15421AE5072300861C6B /* ImageOptimGPL.framework */; };
 		5AC4CC801AF568E90003AEA2 /* SavingsFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 5A8A18131416D1D700D62DB7 /* SavingsFormatter.m */; };
 		5AC64EC21AF3FCFE0032AA7F /* unoptimized.png in Resources */ = {isa = PBXBuildFile; fileRef = 5AC64EC11AF3FCFE0032AA7F /* unoptimized.png */; };
@@ -715,6 +717,9 @@
 		3B247D73E22FC54F29A52CC1 /* ImageOptim-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ImageOptim-Bridging-Header.h"; sourceTree = "<group>"; };
 		F25FF00274ED4381473A97D7 /* FileListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileListStore.swift; sourceTree = "<group>"; };
 		8F5C4CC83E794E2EC57719D0 /* ScaffoldPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaffoldPlaceholderView.swift; sourceTree = "<group>"; };
+		79299E5172557756412B8461 /* PreferencesTabSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesTabSelection.swift; sourceTree = "<group>"; };
+		F4EFFD2F18CD3646BEB7F507 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		0F49A900A2A7F96CBDA424BF /* PreferencesWindowFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesWindowFactory.swift; sourceTree = "<group>"; };
 		5AE54D800CAEE8AC00903DF4 /* defaults.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = defaults.plist; sourceTree = "<group>"; };
 		5AE54DED0CAEF56100903DF4 /* PngoutWorker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PngoutWorker.h; sourceTree = "<group>"; };
 		5AE54DEE0CAEF56100903DF4 /* PngoutWorker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PngoutWorker.m; sourceTree = "<group>"; };
@@ -1050,6 +1055,9 @@
 			children = (
 				F25FF00274ED4381473A97D7 /* FileListStore.swift */,
 				8F5C4CC83E794E2EC57719D0 /* ScaffoldPlaceholderView.swift */,
+				79299E5172557756412B8461 /* PreferencesTabSelection.swift */,
+				F4EFFD2F18CD3646BEB7F507 /* PreferencesView.swift */,
+				0F49A900A2A7F96CBDA424BF /* PreferencesWindowFactory.swift */,
 			);
 			name = SwiftUI;
 			sourceTree = "<group>";
@@ -1634,7 +1642,6 @@
 				5A0A24F617494254003264CC /* noopt@2x.png in Resources */,
 				5A7D24E913E5BC3100815AAA /* ok.png in Resources */,
 				5A0A24F117492D39003264CC /* ok@2x.png in Resources */,
-				5A7D24E213E5BC3100815AAA /* PrefsController.xib in Resources */,
 				5A7D24EA13E5BC3100815AAA /* progress.png in Resources */,
 				5A0A24F817494254003264CC /* progress@2x.png in Resources */,
 				5A1D3E8C14366933004EE809 /* style.css in Resources */,
@@ -1727,6 +1734,9 @@
 				5AACA8310CAFE74E004D45CA /* Transformers.m in Sources */,
 				AC8152D5A7507ED970396115 /* FileListStore.swift in Sources */,
 				A4B2A507211BB5F3E76C728C /* ScaffoldPlaceholderView.swift in Sources */,
+				FE66CA67C96B53B3B55AEA08 /* PreferencesTabSelection.swift in Sources */,
+				D7F9726960552494B2A6D721 /* PreferencesView.swift in Sources */,
+				220D54DB82DF6DE28B4BEA67 /* PreferencesWindowFactory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
