@@ -307,7 +307,15 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     listView.translatesAutoresizingMaskIntoConstraints = NO;
 
     tableView.enclosingScrollView.hidden = YES;
-    fadeView.hidden = YES;
+
+    // Not fadeView.hidden = YES: FadeView.m overrides -setHidden: to never actually call
+    // super when hiding — it only kicks off an *animated* fade to alpha 0 via self.animator,
+    // relying on a valid animation context. Called this early (from -awakeFromNib, before the
+    // window is on screen) that animation doesn't reliably run, leaving FadeView's child
+    // DragDropImageView fully opaque and painting on top of the new SwiftUI empty state —
+    // an intermittent glitch, not a guaranteed one, which is exactly what made it easy to
+    // miss in testing. Removing it from the hierarchy sidesteps the override entirely.
+    [fadeView removeFromSuperview];
 
     [container addSubview:listView];
     [NSLayoutConstraint activateConstraints:@[
