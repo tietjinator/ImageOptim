@@ -707,6 +707,7 @@ CA
                 <outlet property="bestToolColumn" destination="771" id="yJB-bn-Bu0"/>
                 <outlet property="chromeProgressIndicator" destination="428" id="eX7-hM-2pB"/>
                 <outlet property="credits" destination="530" id="707"/>
+                <outlet property="fadeView" destination="XNq-qc-Ci6" id="gY1-tK-6hZ"/>
                 <outlet property="fileColumn" destination="238" id="Aya-HA-Hia"/>
                 <outlet property="filesController" destination="251" id="274"/>
                 <outlet property="originalSizeColumn" destination="795" id="Fip-0O-tR1"/>

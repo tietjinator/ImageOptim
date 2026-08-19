@@ -9,21 +9,35 @@
 //  FilesController itself already uses internally to watch its JobQueue's isBusy.
 //
 
+import AppKit
 import Combine
-import Foundation
 
 // File-scope (not a type member) so it's usable from FileListStore's nonisolated deinit
 // without tripping Swift 6's MainActor-isolation-of-static-members rule.
-private let observedKeyPaths = ["arrangedObjects", "isBusy", "isStoppable"]
+private let observedKeyPaths = ["arrangedObjects", "isBusy", "isStoppable", "selectionIndexes"]
 
 @MainActor
 @objc final class FileListStore: NSObject, ObservableObject {
-    private let filesController: FilesController
+    let filesController: FilesController
     private var isObserving = false
+    private var rowCache: [ObjectIdentifier: FileRowStore] = [:]
 
-    @Published private(set) var rows: [JobProxy] = []
+    @Published private(set) var rows: [FileRowStore] = []
     @Published private(set) var isBusy: Bool = false
     @Published private(set) var isStoppable: Bool = false
+
+    // Mirrors FilesController.selectedObjects/selectionIndexes (standard NSArrayController
+    // selection). Kept in sync so the rest of the app — Quick Look, Start Again/Stop/Revert,
+    // menu validation in ImageOptimController.m — keeps working against "the selection"
+    // exactly as it did when an NSTableView bound to FilesController drove that state.
+    @Published var selection: Set<ObjectIdentifier> = [] {
+        didSet {
+            guard !isSyncingSelectionFromController, selection != oldValue else { return }
+            let matched = rows.filter { selection.contains($0.id) }.map { $0.jobProxy }
+            filesController.setSelectedObjects(matched)
+        }
+    }
+    private var isSyncingSelectionFromController = false
 
     // Set from ImageOptimController.m's existing status-bar computation (see
     // -initStatusbarWithDefaults: in ImageOptimController.m), which stays in Objective-C
@@ -65,15 +79,50 @@ private let observedKeyPaths = ["arrangedObjects", "isBusy", "isStoppable"]
             guard let self else { return }
             switch keyPath {
             case "arrangedObjects":
-                self.rows = (self.filesController.arrangedObjects as? [JobProxy]) ?? []
+                self.rebuildRows()
             case "isBusy":
                 self.isBusy = self.filesController.isBusy
             case "isStoppable":
                 self.isStoppable = self.filesController.isStoppable
+            case "selectionIndexes":
+                self.syncSelectionFromController()
             default:
                 break
             }
         }
+    }
+
+    private func rebuildRows() {
+        let proxies = (filesController.arrangedObjects as? [JobProxy]) ?? []
+        var newCache: [ObjectIdentifier: FileRowStore] = [:]
+        newCache.reserveCapacity(proxies.count)
+
+        rows = proxies.map { proxy in
+            let key = ObjectIdentifier(proxy)
+            if let existing = rowCache[key] {
+                newCache[key] = existing
+                return existing
+            }
+            let created = FileRowStore(jobProxy: proxy)
+            newCache[key] = created
+            return created
+        }
+        rowCache = newCache
+
+        // Drop selection entries for rows that no longer exist (e.g. after Clear Complete).
+        let validIDs = Set(rows.map(\.id))
+        if !selection.isSubset(of: validIDs) {
+            selection.formIntersection(validIDs)
+        }
+    }
+
+    private func syncSelectionFromController() {
+        let selected = (filesController.selectedObjects as? [JobProxy]) ?? []
+        let newSelection = Set(selected.map { ObjectIdentifier($0) })
+        guard newSelection != selection else { return }
+        isSyncingSelectionFromController = true
+        selection = newSelection
+        isSyncingSelectionFromController = false
     }
 
     // MARK: - Actions (pass-through to the existing FilesController)
@@ -97,6 +146,19 @@ private let observedKeyPaths = ["arrangedObjects", "isBusy", "isStoppable"]
 
     func revert() {
         filesController.revert()
+    }
+
+    func revealInFinder(_ rowsToReveal: [FileRowStore]) {
+        let urls = rowsToReveal.map(\.jobProxy.filePath)
+        NSWorkspace.shared.activateFileViewerSelecting(urls)
+    }
+
+    func delete(_ rowsToDelete: [FileRowStore]) {
+        filesController.remove(contentsOf: rowsToDelete.map(\.jobProxy))
+    }
+
+    func move(fromOffsets source: IndexSet, toOffset destination: Int) {
+        filesController.moveObjectsInArrangedObjects(from: source, to: UInt(destination))
     }
 
     var canClearComplete: Bool {

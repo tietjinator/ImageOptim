@@ -14,7 +14,10 @@
 #import <Quartz/Quartz.h>
 
 @implementation ImageOptimController {
+    // Backs both the bottom chrome bar and the file list — one KVO-bridged store per window,
+    // shared, rather than two independent ones observing the same FilesController twice.
     FileListStore *chromeStore;
+    NSView *chromeHostingView;
 }
 
 extern int quitWhenDone;
@@ -246,6 +249,7 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     [credits addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:nil];
 
     [self installSwiftChrome];
+    [self installSwiftFileList];
 }
 
 // Hides the AppKit bottom control strip (Add/status/progress/Again/Settings, still present in
@@ -284,6 +288,33 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
         [chromeView.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
         [chromeView.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
         [chromeView.heightAnchor constraintEqualToConstant:39],
+    ]];
+
+    chromeHostingView = chromeView;
+}
+
+// Hides tableView's enclosing NSScrollView and FadeView (the drag-and-drop empty state) and
+// hosts SwiftUI/FileListView.swift in the same region, filling the window between its top and
+// the chrome bar installed above. tableView itself is untouched (not deallocated, just no
+// longer visible) — its own IBOutlets, RevealButtonCell wiring, etc. stay intact but unused;
+// -quickLookAction: and -previewPanel:sourceFrameOnScreenForPreviewItem: still reference it
+// directly and keep working (frameOfCellAtColumn:row: degrades gracefully to NSZeroRect when
+// there's no visible geometry, which just skips the Quick Look zoom animation).
+- (void)installSwiftFileList {
+    NSViewController *fileListVC = [FileListViewFactory makeViewControllerWithStore:chromeStore];
+    NSView *container = addButton.superview;
+    NSView *listView = fileListVC.view;
+    listView.translatesAutoresizingMaskIntoConstraints = NO;
+
+    tableView.enclosingScrollView.hidden = YES;
+    fadeView.hidden = YES;
+
+    [container addSubview:listView];
+    [NSLayoutConstraint activateConstraints:@[
+        [listView.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
+        [listView.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
+        [listView.topAnchor constraintEqualToAnchor:container.topAnchor],
+        [listView.bottomAnchor constraintEqualToAnchor:chromeHostingView.topAnchor],
     ]];
 }
 
@@ -385,6 +416,103 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
 
 - (IBAction)clearComplete:(id)sender {
     [filesController clearComplete];
+}
+
+// The following were -[MyTableView delete:]/-copy:/-cut:/-paste:/-copyAsDataURI: — moved here
+// because they're wired as first-responder actions from the Edit menu (target "-1" in the
+// xib, resolved by selector name, not by outlet), and a hidden NSTableView drops out of the
+// responder chain, which would otherwise silently break the whole Edit menu once
+// -installSwiftFileList hides it. ImageOptimController, as the app delegate, is always
+// reachable as the last stop in that chain.
+
+- (void)removeObjectsWithUndo:(NSArray *)objects {
+    [[[tableView window] undoManager] registerUndoWithTarget:self selector:@selector(addObjectsWithUndo:) object:objects];
+    [filesController removeObjects:objects];
+}
+
+- (void)addObjectsWithUndo:(NSArray *)objects {
+    [[[tableView window] undoManager] registerUndoWithTarget:self selector:@selector(removeObjectsWithUndo:) object:objects];
+    [filesController addObjects:objects];
+}
+
+- (IBAction)delete:(id)sender {
+    NSArray *selected = [filesController selectedObjects];
+    if (![selected count]) return;
+    [[[tableView window] undoManager] setActionName:NSLocalizedString(@"Delete", @"undo command name")];
+    [self removeObjectsWithUndo:selected];
+}
+
+- (IBAction)copy:(id)sender {
+    NSArray *selected = [filesController selectedObjects];
+    NSMutableArray *filePaths = [NSMutableArray arrayWithCapacity:[selected count]];
+    NSMutableArray *fileNames = [NSMutableArray arrayWithCapacity:[selected count]];
+    for (JobProxy *job in selected) {
+        NSString *path = job.filePath.path;
+        if (path) {
+            [filePaths addObject:path];
+            [fileNames addObject:[path.lastPathComponent stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLPathAllowedCharacterSet]]];
+        }
+    }
+    if ([filePaths count]) {
+        NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+        [pboard declareTypes:@[ NSFilenamesPboardType, NSStringPboardType ] owner:self];
+        [pboard setPropertyList:filePaths forType:NSFilenamesPboardType];
+        [pboard setString:[fileNames componentsJoinedByString:@"\n"] forType:NSStringPboardType];
+    }
+}
+
+- (IBAction)cut:(id)sender {
+    [self copy:sender];
+    [self delete:sender];
+    [[[tableView window] undoManager] setActionName:NSLocalizedString(@"Cut", @"undo command name")];
+}
+
+- (IBAction)paste:(id)sender {
+    NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+    NSArray *paths = [pboard propertyListForType:NSFilenamesPboardType];
+    NSMutableArray *urls = [NSMutableArray arrayWithCapacity:[paths count]];
+    for (NSString *path in paths) {
+        [urls addObject:[NSURL fileURLWithPath:path]];
+    }
+    [filesController addURLsBelowSelection:urls];
+}
+
+- (NSArray<File *> *)filesForDataURI {
+    NSArray *selectedFiles = [filesController selectedObjects];
+    NSMutableArray *files = [NSMutableArray arrayWithCapacity:[selectedFiles count]];
+    NSUInteger totalSize = 0;
+    for (JobProxy *job in selectedFiles) {
+        if (![job isDone]) continue;
+        File *file = [job savedOutputOrInput];
+        if (!file || file.byteSize > 100000) continue;
+        totalSize += file.byteSize;
+        if (totalSize > 1000000) break;
+        [files addObject:file];
+    }
+    return files;
+}
+
+- (IBAction)copyAsDataURI:(id)sender {
+    NSMutableArray *urls = [NSMutableArray new];
+    for (File *file in [self filesForDataURI]) {
+        NSData *data = [NSData dataWithContentsOfURL:file.path];
+
+        NSString *type = [file mimeType];
+        if (!type) continue;
+
+        NSString *url = [[NSString stringWithFormat:@"data:%@;base64,", type]
+            stringByAppendingString:[data base64EncodedStringWithOptions:0]];
+
+        [urls addObject:url];
+    }
+
+    NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+    [pboard declareTypes:@[ NSStringPboardType ] owner:nil];
+    [pboard setString:[urls componentsJoinedByString:@"\n"] forType:NSStringPboardType];
+}
+
+- (IBAction)selectAll:(id)sender {
+    [filesController setSelectedObjects:[filesController arrangedObjects]];
 }
 
 - (IBAction)showPrefs:(id)sender {
@@ -504,6 +632,16 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
         return [filesController canRevert];
     } else if (action == @selector(stop:)) {
         return [filesController isStoppable];
+    } else if (action == @selector(delete:) || action == @selector(copy:) || action == @selector(cut:)) {
+        return [[filesController selectedObjects] count] > 0;
+    } else if (action == @selector(copyAsDataURI:)) {
+        return [[filesController selectedObjects] count] > 0 && [[self filesForDataURI] count] > 0;
+    } else if (action == @selector(paste:)) {
+        NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+        NSArray *paths = [pboard propertyListForType:NSFilenamesPboardType];
+        return [paths count] > 0;
+    } else if (action == @selector(selectAll:)) {
+        return [[filesController arrangedObjects] count] > 0;
     }
 
     return [menuItem isEnabled];
