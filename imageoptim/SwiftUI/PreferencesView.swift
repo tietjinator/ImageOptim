@@ -281,10 +281,18 @@ private struct FilesPane: View {
                 Text("Prefix:")
                 TextField("none", text: $filenamePrefix)
                     .textFieldStyle(.roundedBorder)
+                dateInsertMenu(into: $filenamePrefix)
+
                 Text("Suffix:")
                 TextField("none", text: $filenameSuffix)
                     .textFieldStyle(.roundedBorder)
+                dateInsertMenu(into: $filenameSuffix)
             }
+
+            Text("Or type {date:FORMAT} directly for a custom format, e.g. {date:yyyy 'Q'Q}")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack {
                 Text("Folder:")
@@ -317,6 +325,31 @@ private struct FilesPane: View {
         panel.prompt = "Choose"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         outputFolderPath = url.path
+    }
+
+    // Inserts a {date:...} token — see Job.m's -expandDateTokensIn:at: for how these are
+    // expanded at save time. Presets cover the common cases; {date:FORMAT} typed directly
+    // into the field accepts any NSDateFormatter pattern for anything more specific.
+    @ViewBuilder
+    private func dateInsertMenu(into text: Binding<String>) -> some View {
+        Menu {
+            Button("Date (\(Self.formattedSample("yy.MM.dd")))") { text.wrappedValue += "{date}" }
+            Button("Time (\(Self.formattedSample("HH-mm-ss")))") { text.wrappedValue += "{date:HH-mm-ss}" }
+            Button("Date & Time (\(Self.formattedSample("yy.MM.dd_HH-mm-ss")))") {
+                text.wrappedValue += "{date:yy.MM.dd_HH-mm-ss}"
+            }
+        } label: {
+            Image(systemName: "calendar.badge.plus")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Insert a date or time token")
+    }
+
+    private static func formattedSample(_ format: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        return formatter.string(from: Date())
     }
 }
 

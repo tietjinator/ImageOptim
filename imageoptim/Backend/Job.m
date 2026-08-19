@@ -349,6 +349,36 @@
     return YES;
 }
 
+// Expands {date} / {date:FORMAT} tokens in a prefix/suffix template against a single shared
+// timestamp (passed in so a prefix and suffix used together always agree, rather than each
+// grabbing its own -[NSDate date] microseconds apart). FORMAT is a plain NSDateFormatter
+// pattern (e.g. "yy.MM.dd", "HH-mm-ss") — bare {date} defaults to "yy.MM.dd".
+- (NSString *)expandDateTokensIn:(NSString *)template at:(NSDate *)now {
+    if ([template rangeOfString:@"{date"].location == NSNotFound) {
+        return template;
+    }
+
+    static NSRegularExpression *tokenRegex;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        tokenRegex = [NSRegularExpression regularExpressionWithPattern:@"\\{date(?::([^}]+))?\\}" options:0 error:nil];
+    });
+
+    NSMutableString *result = [template mutableCopy];
+    NSArray<NSTextCheckingResult *> *matches = [tokenRegex matchesInString:template options:0 range:NSMakeRange(0, template.length)];
+    for (NSTextCheckingResult *match in matches.reverseObjectEnumerator) {
+        NSRange formatRange = [match rangeAtIndex:1];
+        NSString *formatSpec = formatRange.location == NSNotFound ? @"yy.MM.dd" : [template substringWithRange:formatRange];
+
+        NSDateFormatter *formatter = [NSDateFormatter new];
+        formatter.dateFormat = formatSpec;
+        NSString *formatted = [[formatter stringFromDate:now] stringByReplacingOccurrencesOfString:@"/" withString:@"-"];
+
+        [result replaceCharactersInRange:match.range withString:formatted];
+    }
+    return result;
+}
+
 // Where the optimized result should actually be written. Defaults to filePath itself
 // (today's only behavior: overwrite in place) unless a prefix/suffix/output folder is
 // configured, in which case it's a different file next to (or in) the configured location.
@@ -365,9 +395,10 @@
     NSString *ext = isHeicConversion ? @"jpg" : filePath.pathExtension;
     NSString *base = filePath.lastPathComponent.stringByDeletingPathExtension;
 
-    NSString *prefix = filenamePrefix ?: @"";
-    NSString *suffix = filenameSuffix ?: @"";
-    BOOL noCustomNaming = prefix.length == 0 && suffix.length == 0;
+    NSDate *now = [NSDate date];
+    NSString *prefix = [self expandDateTokensIn:(filenamePrefix ?: @"") at:now];
+    NSString *suffix = [self expandDateTokensIn:(filenameSuffix ?: @"") at:now];
+    BOOL noCustomNaming = filenamePrefix.length == 0 && filenameSuffix.length == 0;
     BOOL noCustomFolder = outputFolderPath.length == 0;
 
     if (preserveOriginal && noCustomNaming && noCustomFolder) {
