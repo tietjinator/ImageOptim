@@ -6,7 +6,7 @@
 //  via @AppStorage, to the exact same NSUserDefaults key the old xib used (see
 //  imageoptim/defaults.plist and the `keyPath="values.*"` bindings that used to live in the
 //  xib), so no migration is needed and the app stays interoperable with defaults set outside
-//  the UI (e.g. `defaults write net.pornel.ImageOptim RunLowPriority -bool false`).
+//  the UI (e.g. `defaults write com.tietjinator.SwiftOptim RunLowPriority -bool false`).
 //
 //  Layout is a sidebar of icon+label panes rather than the original's three-tab strip,
 //  styled after IINA's Preferences window (https://github.com/iina/iina) at the user's

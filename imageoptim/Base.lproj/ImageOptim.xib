@@ -13,7 +13,7 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <window title="ImageOptim" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" frameAutosaveName="MainWindow" animationBehavior="default" id="21">
+        <window title="SwiftOptim" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" frameAutosaveName="MainWindow" animationBehavior="default" id="21">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="448" y="483" width="549" height="297"/>
@@ -294,19 +294,13 @@
         </window>
         <menu title="MainMenu" systemMenu="main" id="29">
             <items>
-                <menuItem title="ImageOptim" id="56">
-                    <menu key="submenu" title="ImageOptim" systemMenu="apple" id="57">
+                <menuItem title="SwiftOptim" id="56">
+                    <menu key="submenu" title="SwiftOptim" systemMenu="apple" id="57">
                         <items>
-                            <menuItem title="About ImageOptim" id="361">
+                            <menuItem title="About SwiftOptim" id="361">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="makeKeyAndOrderFront:" target="526" id="531"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Check for Updates…" id="624">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="checkForUpdates:" target="623" id="625"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="362">
@@ -332,7 +326,7 @@
                             <menuItem isSeparatorItem="YES" id="144">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Hide ImageOptim" keyEquivalent="h" id="134">
+                            <menuItem title="Hide SwiftOptim" keyEquivalent="h" id="134">
                                 <connections>
                                     <action selector="hide:" target="-2" id="152"/>
                                 </connections>
@@ -351,7 +345,7 @@
                             <menuItem isSeparatorItem="YES" id="149">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Quit ImageOptim" keyEquivalent="q" id="136">
+                            <menuItem title="Quit SwiftOptim" keyEquivalent="q" id="136">
                                 <connections>
                                     <action selector="terminate:" target="-2" id="139"/>
                                 </connections>
@@ -719,7 +713,6 @@ CA
             </view>
         </window>
         <userDefaultsController representsSharedInstance="YES" id="562"/>
-        <customObject id="623" customClass="SUUpdater"/>
         <menu id="aEm-KO-6Fg">
             <items>
                 <menuItem title="Show in Finder" id="ddH-3k-EuT">

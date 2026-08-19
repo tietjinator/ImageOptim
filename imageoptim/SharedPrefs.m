@@ -2,7 +2,7 @@
 #import "SharedPrefs.h"
 
 NSUserDefaults *IOSharedPrefs(void) {
-    return [[NSUserDefaults alloc] initWithSuiteName:@"59KZTZA4XR.net.pornel.ImageOptim"];
+    return [[NSUserDefaults alloc] initWithSuiteName:@"9348J336DS.com.tietjinator.SwiftOptim"];
 }
 
 static void copyToDefs(const NSArray *__nonnull keys, const NSUserDefaults *__nonnull defs, NSUserDefaults *__nonnull shared) {

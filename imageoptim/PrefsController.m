@@ -11,7 +11,7 @@
 
 #import "PrefsController.h"
 #import "ImageOptimController.h"
-#import "ImageOptim-Swift.h"
+#import "SwiftOptim-Swift.h"
 
 @interface PrefsController ()
 @property (nonatomic, strong) PreferencesTabSelection *tabSelection;

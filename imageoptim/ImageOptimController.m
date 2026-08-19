@@ -7,7 +7,7 @@
 #import "PrefsController.h"
 #import "MyTableView.h"
 #import "SharedPrefs.h"
-#import "ImageOptim-Swift.h"
+#import "SwiftOptim-Swift.h"
 #include <mach/mach_host.h>
 #include <mach/host_info.h>
 #import <Quartz/Quartz.h>
