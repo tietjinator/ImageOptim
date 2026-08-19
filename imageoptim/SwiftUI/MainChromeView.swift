@@ -6,9 +6,8 @@
 //  button (id 423), status label (id 294), progress spinner (id 428), Again button (id 586),
 //  and Settings gear (id Chx-W4-45F). Those AppKit controls stay in the xib but are hidden at
 //  runtime in -[ImageOptimController awakeFromNib] and this view is hosted in their place —
-//  see MainChromeViewFactory below and ImageOptimController.m. The file list table and the
-//  drag-and-drop empty state (FadeView/DragDropImageView) are untouched; that's the next
-//  phase of the rewrite.
+//  see MainChromeViewFactory below and ImageOptimController.m. The file list (FileListView.swift)
+//  is handled separately.
 //
 //  The "Add" button's old `enabled` binding pointed at a `canAdd` key that doesn't exist
 //  anywhere on FilesController (confirmed by grep) — Cocoa Bindings just silently no-ops on

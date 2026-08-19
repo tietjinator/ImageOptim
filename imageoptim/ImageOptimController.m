@@ -1,6 +1,5 @@
 #import "ImageOptimController.h"
 #import "FilesController.h"
-#import "RevealButtonCell.h"
 #import "Backend/Job.h"
 #import "JobProxy.h"
 #import "File.h"
@@ -238,10 +237,6 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
         [NSApp hide:self];
     }
 
-    RevealButtonCell *cell = [[tableView tableColumnWithIdentifier:@"filename"] dataCell];
-    [cell setInfoButtonAction:@selector(openInFinder:)];
-    [cell setTarget:tableView];
-
     [credits setString:@""];
 
     // this creates and sets the text for textview
@@ -299,13 +294,14 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     chromeHostingView = chromeView;
 }
 
-// Hides tableView's enclosing NSScrollView and FadeView (the drag-and-drop empty state) and
-// hosts SwiftUI/FileListView.swift in the same region, filling the window between its top and
-// the chrome bar installed above. tableView itself is untouched (not deallocated, just no
-// longer visible) — its own IBOutlets, RevealButtonCell wiring, etc. stay intact but unused;
-// -quickLookAction: and -previewPanel:sourceFrameOnScreenForPreviewItem: still reference it
-// directly and keep working (frameOfCellAtColumn:row: degrades gracefully to NSZeroRect when
-// there's no visible geometry, which just skips the Quick Look zoom animation).
+// Hides tableView's enclosing NSScrollView and hosts SwiftUI/FileListView.swift in the same
+// region, filling the window between its top and the chrome bar installed above. tableView
+// itself is untouched (not deallocated, just no longer visible) — -quickLookAction: and
+// -previewPanel:sourceFrameOnScreenForPreviewItem: still reference it directly and keep working
+// (frameOfCellAtColumn:row: degrades gracefully to NSZeroRect when there's no visible geometry,
+// which just skips the Quick Look zoom animation). The old FadeView/DragDropImageView empty
+// state has been deleted outright (not just hidden) now that FileListView.swift fully replaces
+// it — see the SwiftUI cleanup commit for why that pair was safe to remove entirely.
 - (void)installSwiftFileList {
     NSViewController *fileListVC = [FileListViewFactory makeViewControllerWithStore:chromeStore];
     NSView *container = addButton.superview;
@@ -313,15 +309,6 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     listView.translatesAutoresizingMaskIntoConstraints = NO;
 
     tableView.enclosingScrollView.hidden = YES;
-
-    // Not fadeView.hidden = YES: FadeView.m overrides -setHidden: to never actually call
-    // super when hiding — it only kicks off an *animated* fade to alpha 0 via self.animator,
-    // relying on a valid animation context. Called this early (from -awakeFromNib, before the
-    // window is on screen) that animation doesn't reliably run, leaving FadeView's child
-    // DragDropImageView fully opaque and painting on top of the new SwiftUI empty state —
-    // an intermittent glitch, not a guaranteed one, which is exactly what made it easy to
-    // miss in testing. Removing it from the hierarchy sidesteps the override entirely.
-    [fadeView removeFromSuperview];
 
     [container addSubview:listView];
     [NSLayoutConstraint activateConstraints:@[
@@ -529,6 +516,12 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
     [filesController setSelectedObjects:[filesController arrangedObjects]];
 }
 
+- (IBAction)openInFinder:(id)sender {
+    NSArray *selected = [filesController selectedObjects];
+    if (![selected count]) return;
+    [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:[selected valueForKey:@"filePath"]];
+}
+
 - (IBAction)showPrefs:(id)sender {
     if (!prefsController) {
         prefsController = [PrefsController new];
@@ -646,7 +639,7 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
         return [filesController canRevert];
     } else if (action == @selector(stop:)) {
         return [filesController isStoppable];
-    } else if (action == @selector(delete:) || action == @selector(copy:) || action == @selector(cut:)) {
+    } else if (action == @selector(delete:) || action == @selector(copy:) || action == @selector(cut:) || action == @selector(openInFinder:)) {
         return [[filesController selectedObjects] count] > 0;
     } else if (action == @selector(copyAsDataURI:)) {
         return [[filesController selectedObjects] count] > 0 && [[self filesForDataURI] count] > 0;

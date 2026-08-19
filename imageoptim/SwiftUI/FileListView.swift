@@ -3,8 +3,9 @@
 //  ImageOptim
 //
 //  SwiftUI replacement for the file list, retiring (in terms of what's actually shown —
-//  see the note in ImageOptimController.m's -installSwiftFileList) MyTableView,
-//  RevealButtonCell, DragDropImageView, and FadeView.
+//  see the note in ImageOptimController.m's -installSwiftFileList) MyTableView's visible
+//  rows. RevealButtonCell, DragDropImageView, and FadeView have been deleted outright, fully
+//  superseded by this file.
 //
 //  Uses List rather than Table: Table (macOS 12+) has no row-reorder API until later OS
 //  versions, while List's .onMove(perform:) has been available since macOS 10.15 and matches
@@ -14,10 +15,12 @@
 //  row rather than a real Table, which costs native resizable-column chrome but avoids
 //  fighting Table's lack of onMove.
 //
-//  Not carried over from the old table in this pass: Copy / Copy as Data URI / Cut / Paste
-//  (MyTableView.m's -copy:/-copyAsDataURI:/-cut:/-paste:) and the "Original Size"/"Best tool"
-//  columns (hidden by default in the xib too, toggled via a header context menu the old
-//  NSTableView provided for free — no SwiftUI equivalent built here).
+//  Copy / Copy as Data URI / Cut / Paste / Delete / Select All / Show in Finder all work via
+//  the Edit/File menus, implemented on ImageOptimController.m against filesController's
+//  selection directly (MyTableView no longer implements any of these — it's hidden and never
+//  first responder). No SwiftUI-side affordance beyond the menu commands exists for them.
+//  "Original Size"/"Best tool" columns (hidden by default in the xib too, toggled via a header
+//  context menu the old NSTableView provided for free) have no SwiftUI equivalent built here.
 //
 
 import SwiftUI

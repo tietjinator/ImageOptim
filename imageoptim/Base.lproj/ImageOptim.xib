@@ -62,7 +62,7 @@
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" white="0.33333299" alpha="1" colorSpace="calibratedWhite"/>
                                             </tableHeaderCell>
-                                            <textFieldCell key="dataCell" lineBreakMode="truncatingTail" allowsUndo="NO" alignment="left" usesSingleLineMode="YES" id="637" customClass="RevealButtonCell">
+                                            <textFieldCell key="dataCell" lineBreakMode="truncatingTail" allowsUndo="NO" alignment="left" usesSingleLineMode="YES" id="637">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -246,32 +246,6 @@
                             </binding>
                         </connections>
                     </button>
-                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="XNq-qc-Ci6" customClass="FadeView">
-                        <rect key="frame" x="0.0" y="39" width="549" height="259"/>
-                        <subviews>
-                            <visualEffectView fixedFrame="YES" blendingMode="behindWindow" material="appearanceBased" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="DRj-ri-dv2">
-                                <rect key="frame" x="0.0" y="0.0" width="549" height="259"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <subviews>
-                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="712" customClass="DragDropImageView">
-                                        <rect key="frame" x="0.0" y="0.0" width="549" height="259"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                        <accessibility description="Drop images here"/>
-                                        <connections>
-                                            <outlet property="filesController" destination="251" id="aqi-nA-YrU"/>
-                                        </connections>
-                                    </customView>
-                                </subviews>
-                            </visualEffectView>
-                        </subviews>
-                        <connections>
-                            <binding destination="251" name="hidden" keyPath="arrangedObjects.@count" id="SCX-vI-sGf">
-                                <dictionary key="options">
-                                    <bool key="NSRaisesForNotApplicableKeys" value="NO"/>
-                                </dictionary>
-                            </binding>
-                        </connections>
-                    </customView>
                     <button toolTip="Settings" translatesAutoresizingMaskIntoConstraints="NO" id="Chx-W4-45F" userLabel="Settings Button">
                         <rect key="frame" x="427" y="8" width="16" height="22"/>
                         <buttonCell key="cell" type="bevel" bezelStyle="regularSquare" image="NSActionTemplate" imagePosition="only" imageScaling="proportionallyDown" inset="2" id="wBv-xY-5DV">
@@ -295,20 +269,16 @@
                     <constraint firstItem="586" firstAttribute="leading" secondItem="428" secondAttribute="trailing" constant="8" id="4Q3-fw-7u9"/>
                     <constraint firstItem="428" firstAttribute="width" secondItem="Chx-W4-45F" secondAttribute="width" id="7hW-ta-uGC"/>
                     <constraint firstAttribute="trailing" secondItem="236" secondAttribute="trailing" id="98K-BG-Ip3"/>
-                    <constraint firstItem="XNq-qc-Ci6" firstAttribute="top" secondItem="236" secondAttribute="top" id="DyQ-wZ-c9v"/>
                     <constraint firstItem="586" firstAttribute="centerY" secondItem="428" secondAttribute="centerY" id="EEF-Hw-pgC"/>
                     <constraint firstItem="423" firstAttribute="leading" secondItem="2" secondAttribute="leading" constant="8" id="EYQ-au-Yi5"/>
                     <constraint firstItem="428" firstAttribute="centerX" secondItem="Chx-W4-45F" secondAttribute="centerX" id="Gpe-Lw-2jd"/>
                     <constraint firstItem="423" firstAttribute="centerY" secondItem="586" secondAttribute="centerY" id="Ifv-FK-6o5"/>
-                    <constraint firstItem="XNq-qc-Ci6" firstAttribute="leading" secondItem="236" secondAttribute="leading" id="LBk-8s-hJc"/>
                     <constraint firstAttribute="bottom" secondItem="423" secondAttribute="bottom" constant="8" id="T9q-uS-x5t"/>
                     <constraint firstAttribute="bottom" secondItem="236" secondAttribute="bottom" constant="39" id="W7k-DE-tH8"/>
                     <constraint firstItem="423" firstAttribute="centerY" secondItem="294" secondAttribute="centerY" id="cFl-bD-jqG"/>
                     <constraint firstItem="236" firstAttribute="leading" secondItem="2" secondAttribute="leading" id="eyA-VZ-bkI"/>
-                    <constraint firstItem="XNq-qc-Ci6" firstAttribute="height" secondItem="236" secondAttribute="height" id="f4r-Gg-F59"/>
                     <constraint firstItem="236" firstAttribute="top" secondItem="2" secondAttribute="top" constant="-1" id="h09-6j-JZ1"/>
                     <constraint firstItem="294" firstAttribute="leading" secondItem="423" secondAttribute="trailing" constant="7" id="lru-KL-RTj"/>
-                    <constraint firstItem="XNq-qc-Ci6" firstAttribute="trailing" secondItem="236" secondAttribute="trailing" id="pcn-HL-uUr"/>
                     <constraint firstItem="586" firstAttribute="top" secondItem="236" secondAttribute="bottom" constant="9" id="s3k-0Z-V7B"/>
                     <constraint firstAttribute="bottom" secondItem="586" secondAttribute="bottom" constant="8" id="std-o8-EXO"/>
                     <constraint firstItem="428" firstAttribute="height" secondItem="Chx-W4-45F" secondAttribute="height" id="wf9-0K-F7g"/>
@@ -609,62 +579,6 @@ CA
                                     <action selector="arrangeInFront:" target="-1" id="39"/>
                                 </connections>
                             </menuItem>
-                            <menuItem isSeparatorItem="YES" id="812"/>
-                            <menuItem title="Show Columns" id="809">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <menu key="submenu" id="739" userLabel="Header context menu">
-                                    <items>
-                                        <menuItem title="Original Size" id="791">
-                                            <modifierMask key="keyEquivalentModifierMask"/>
-                                            <connections>
-                                                <binding destination="230" name="value" keyPath="originalSizeColumn.hidden" id="808">
-                                                    <dictionary key="options">
-                                                        <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                                        <bool key="NSRaisesForNotApplicableKeys" value="NO"/>
-                                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                                    </dictionary>
-                                                </binding>
-                                            </connections>
-                                        </menuItem>
-                                        <menuItem title="Optimized Size" state="on" id="740">
-                                            <modifierMask key="keyEquivalentModifierMask"/>
-                                            <connections>
-                                                <binding destination="230" name="value" keyPath="sizeColumn.hidden" id="769">
-                                                    <dictionary key="options">
-                                                        <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                                        <bool key="NSRaisesForNotApplicableKeys" value="NO"/>
-                                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                                    </dictionary>
-                                                </binding>
-                                            </connections>
-                                        </menuItem>
-                                        <menuItem title="Savings" state="on" id="741">
-                                            <modifierMask key="keyEquivalentModifierMask"/>
-                                            <connections>
-                                                <binding destination="230" name="value" keyPath="savingsColumn.hidden" id="786">
-                                                    <dictionary key="options">
-                                                        <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                                        <bool key="NSRaisesForNotApplicableKeys" value="NO"/>
-                                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                                    </dictionary>
-                                                </binding>
-                                            </connections>
-                                        </menuItem>
-                                        <menuItem title="Best tool" id="747">
-                                            <modifierMask key="keyEquivalentModifierMask"/>
-                                            <connections>
-                                                <binding destination="230" name="value" keyPath="bestToolColumn.hidden" id="789">
-                                                    <dictionary key="options">
-                                                        <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                                        <bool key="NSRaisesForNotApplicableKeys" value="NO"/>
-                                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                                    </dictionary>
-                                                </binding>
-                                            </connections>
-                                        </menuItem>
-                                    </items>
-                                </menu>
-                            </menuItem>
                         </items>
                     </menu>
                 </menuItem>
@@ -707,7 +621,6 @@ CA
                 <outlet property="bestToolColumn" destination="771" id="yJB-bn-Bu0"/>
                 <outlet property="chromeProgressIndicator" destination="428" id="eX7-hM-2pB"/>
                 <outlet property="credits" destination="530" id="707"/>
-                <outlet property="fadeView" destination="XNq-qc-Ci6" id="gY1-tK-6hZ"/>
                 <outlet property="fileColumn" destination="238" id="Aya-HA-Hia"/>
                 <outlet property="filesController" destination="251" id="274"/>
                 <outlet property="originalSizeColumn" destination="795" id="Fip-0O-tR1"/>

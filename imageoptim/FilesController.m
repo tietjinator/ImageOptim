@@ -7,7 +7,6 @@
 #import "FilesController.h"
 #import "log.h"
 #import "Backend/DirScanner.h"
-#import "RevealButtonCell.h"
 #import "ResultsDb.h"
 #import "JobQueue.h"
 #import "JobProxy.h"
@@ -126,16 +125,6 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
     if (row < (signed)[objs count]) {
         JobProxy *f = objs[row];
         assert([f isKindOfClass:[JobProxy class]]);
-
-        if ([aCell isKindOfClass:[RevealButtonCell class]]) {
-            NSRect infoButtonRect = [((RevealButtonCell *)aCell) infoButtonRectForBounds:*rect];
-
-            BOOL mouseIsInside = NSMouseInRect(mouseLocation, infoButtonRect, [aTableView isFlipped]);
-            if (mouseIsInside) {
-                return f.filePath.path;
-            }
-        }
-
         return [f statusText];
     }
     return nil;
