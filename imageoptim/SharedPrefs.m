@@ -25,6 +25,7 @@ void IOSharedPrefsCopy(NSUserDefaults *__nonnull defs) {
         @"PngCrush2Enabled", @"PngOutEnabled",
         @"PngOutRemoveChunks", @"ZopfliEnabled",
         @"PngMinQuality", @"JpegOptimMaxQuality", @"GifQuality",
+        @"HeicToJpegEnabled",
     ];
 
     NSUserDefaults *shared = IOSharedPrefs();

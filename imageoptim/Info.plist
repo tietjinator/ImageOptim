@@ -117,6 +117,33 @@
 			<key>NSPersistentStoreTypeKey</key>
 			<string>Binary</string>
 		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>heic</string>
+				<string>HEIC</string>
+				<string>heif</string>
+				<string>HEIF</string>
+			</array>
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>image/heic</string>
+				<string>image/heif</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>HEIC</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.heic</string>
+				<string>public.heif</string>
+			</array>
+			<key>LSTypeIsPackage</key>
+			<false/>
+			<key>NSPersistentStoreTypeKey</key>
+			<string>Binary</string>
+		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
@@ -171,6 +198,8 @@
 				<string>public.jpeg</string>
 				<string>com.compuserve.gif</string>
 				<string>public.svg-image</string>
+				<string>public.heic</string>
+				<string>public.heif</string>
 			</array>
 			<key>NSServiceDescription</key>
 			<string>Losslessly reduce image file sizes with ImageOptim</string>

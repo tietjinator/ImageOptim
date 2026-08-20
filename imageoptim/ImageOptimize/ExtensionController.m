@@ -82,6 +82,7 @@
                                       @"PngMinQuality" : @(70),
                                       @"JpegOptimMaxQuality" : @(80),
                                       @"LossyEnabled" : @(YES),
+                                      @"HeicToJpegEnabled" : @(YES),
                                   }];
 
                                   self.jobQueue = [[JobQueue alloc] initWithCPUs:0 dirs:1 files:1 defaults:defaults];
@@ -89,9 +90,15 @@
                                   [self.jobQueue wait];
 
                                   BOOL optimized = [f isOptimized];
-                                  [[self status] setStringValue:
-                                                     optimized ? [@"Optimized with " stringByAppendingString:[f bestToolName]]
-                                                               : @"Already optimized"];
+                                  NSString *statusText = optimized ? [@"Optimized with " stringByAppendingString:[f bestToolName]]
+                                                                    : @"Already optimized";
+                                  // AppKit views must only be touched from the main thread; this
+                                  // whole block runs on a background queue. dispatch_sync (not
+                                  // async) so the status text is actually visible on screen
+                                  // before the sleep(1) grace period below elapses.
+                                  dispatch_sync(dispatch_get_main_queue(), ^{
+                                      [[self status] setStringValue:statusText];
+                                  });
                                   sleep(1);
                                   self.currentFile = nil;
 
