@@ -156,7 +156,7 @@
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>ImageOptimize</string>
+				<string>Optimize with SwiftOptim</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>handleServices</string>
@@ -164,8 +164,6 @@
 			<dict>
 				<key>NSApplicationIdentifier</key>
 				<string>com.apple.finder</string>
-				<key>NSTextContent</key>
-				<string>FilePath</string>
 			</dict>
 			<key>NSSendFileTypes</key>
 			<array>
