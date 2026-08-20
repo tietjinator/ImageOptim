@@ -1,14 +1,10 @@
 # SwiftOptim
 
-SwiftOptim is a from-scratch SwiftUI rewrite of [ImageOptim](https://imageoptim.com)'s user
-interface, built on top of ImageOptim's own unmodified compression backend. Same lossless
-optimization tools, same results, native modern UI on top: Zopfli, PNGOUT,
-[OxiPNG](https://lib.rs/crates/oxipng), AdvPNG, PNGCrush,
-[JPEGOptim](https://github.com/tjko/jpegoptim), Jpegtran,
-[Guetzli](https://github.com/google/guetzli), [Gifsicle](https://kornel.ski/lossygif),
-[SVGO](https://github.com/svg/svgo), [svgcleaner](https://github.com/RazrFalcon/svgcleaner), and
-[MozJPEG](https://github.com/mozilla/mozjpeg) — plus a few things ImageOptim itself doesn't do
-(see below).
+**TL;DR:** [ImageOptim](https://imageoptim.com)'s interface, rebuilt from scratch in native
+SwiftUI, running on ImageOptim's own unmodified compression backend — same lossless
+optimization, same third-party tools, same results, modern native UI on top, plus a few new
+features (filename date-tokens, a custom output folder / preserve-original option, HEIC → JPEG
+conversion, a Finder Services-menu entry — see "What's different" below).
 
 ## With thanks
 
