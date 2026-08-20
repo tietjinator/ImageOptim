@@ -398,16 +398,23 @@
     NSDate *now = [NSDate date];
     NSString *prefix = [self expandDateTokensIn:(filenamePrefix ?: @"") at:now];
     NSString *suffix = [self expandDateTokensIn:(filenameSuffix ?: @"") at:now];
-    BOOL noCustomNaming = filenamePrefix.length == 0 && filenameSuffix.length == 0;
     BOOL noCustomFolder = outputFolderPath.length == 0;
-
-    if (preserveOriginal && noCustomNaming && noCustomFolder) {
-        suffix = @"-optimized";
-    }
+    NSURL *destDir = noCustomFolder ? [filePath URLByDeletingLastPathComponent] : [NSURL fileURLWithPath:outputFolderPath isDirectory:YES];
 
     NSString *newName = [[prefix stringByAppendingString:base] stringByAppendingString:suffix];
-    NSURL *destDir = noCustomFolder ? [filePath URLByDeletingLastPathComponent] : [NSURL fileURLWithPath:outputFolderPath isDirectory:YES];
-    return [[destDir URLByAppendingPathComponent:newName] URLByAppendingPathExtension:ext];
+    NSURL *destination = [[destDir URLByAppendingPathComponent:newName] URLByAppendingPathExtension:ext];
+
+    // Preserve Original must never resolve to filePath itself -- not just when prefix/suffix/
+    // output-folder are all left blank, but also e.g. if the user explicitly picked the
+    // source's own folder as the "custom" output folder with no name change, which computes
+    // the exact same destination through a different path. Checking the actual computed
+    // collision (rather than which raw settings produced it) catches both.
+    if (preserveOriginal && [destination isEqual:filePath]) {
+        NSString *fallbackName = [[prefix stringByAppendingString:base] stringByAppendingString:@"-optimized"];
+        destination = [[destDir URLByAppendingPathComponent:fallbackName] URLByAppendingPathExtension:ext];
+    }
+
+    return destination;
 }
 
 - (BOOL)saveResult {
@@ -428,12 +435,19 @@
                 IOWarn("The output folder %@ is not writable", destEnclosingDir.path);
                 return NO;
             }
-            if ([fm fileExistsAtPath:destination.path]) {
-                [fm removeItemAtURL:destination error:nil];
-            }
-            if (![fm copyItemAtURL:fileToSave.path toURL:destination error:&error]) {
-                IOWarn("Failed to copy optimized file to %@: %@", destination.path, error);
+            // Atomic replace, not delete-then-copy: if a previous output already exists at
+            // this destination (e.g. a prior "Start Again") and the copy below fails partway
+            // through (disk full, I/O error), deleting first would have already destroyed that
+            // previous output with nothing to show for it. replaceItemAtURL: builds the
+            // replacement before touching the existing item, so a failure leaves the original
+            // destination content intact.
+            NSURL *resultingURL = nil;
+            if (![fm replaceItemAtURL:destination withItemAtURL:fileToSave.path backupItemName:nil options:NSFileManagerItemReplacementUsingNewMetadataOnly resultingItemURL:&resultingURL error:&error]) {
+                IOWarn("Failed to write optimized file to %@: %@", destination.path, error);
                 return NO;
+            }
+            if (resultingURL) {
+                destination = resultingURL;
             }
             [destination removeAllCachedResourceValues];
             self.savedOutput = [fileToSave copyOfPath:destination size:fileToSave.byteSize];
@@ -681,7 +695,12 @@
     }
 
     NSFileManager *fm = [NSFileManager defaultManager];
-    if (![fm isWritableFileAtPath:filePath.path]) {
+    // Only require filePath itself to be writable when the job will actually overwrite it in
+    // place. Preserve Original, a prefix/suffix, a different output folder, or HEIC conversion
+    // all mean the source is never touched -- saveResult's own copy-branch checks the
+    // destination's writability instead, so a read-only *source* shouldn't block those modes.
+    BOOL willWriteInPlace = !preserveOriginal && [[self computeDestinationURL] isEqual:filePath];
+    if (willWriteInPlace && ![fm isWritableFileAtPath:filePath.path]) {
         [self setError:NSLocalizedString(@"Optimized file could not be saved", @"tooltip")];
         return;
     }
@@ -778,17 +797,39 @@
                 return;
             }
 
-            // Must run before any of the JPEG workers below — they operate on JPEG bytes
-            // that don't exist until this one produces them. worker_list order matters here:
-            // the runFirst/runLater split further down preserves it for makesNonOptimizingModifications workers.
-            [worker_list addObject:[[HeicToJpegWorker alloc] initWithFile:self]];
+            // Must run before any of the JPEG workers below — they operate on JPEG bytes that
+            // don't exist until this one produces them. This is a *hard* precondition, unlike
+            // Guetzli's relationship to Jpegoptim/Jpegtran in the plain FILETYPE_JPEG case
+            // below (those work fine on a real JPEG whether or not Guetzli touched it first) —
+            // so, unlike that case, worker_list order alone isn't enough: the runFirst/runLater
+            // split further down is a scheduling *hint* (queue priority), not an ordering
+            // guarantee, and gives no dependency at all between two workers that both land in
+            // runLater (a common case for a single/small-batch drag-and-drop, since the queue
+            // is underutilized). Explicit NSOperation dependencies below make this a hard
+            // guarantee regardless of which bucket each worker ends up in.
+            HeicToJpegWorker *heicWorker = [[HeicToJpegWorker alloc] initWithFile:self];
+            [worker_list addObject:heicWorker];
 
+            NSMutableArray<Worker *> *jpegWorkers = [NSMutableArray new];
             if (!lossyConverted && !hasBeenRunBefore && [defs boolForKey:@"GuetzliEnabled"] && [defs integerForKey:@"JpegOptimMaxQuality"] >= 80) {
-                [worker_list addObject:[[GuetzliWorker alloc] initWithDefaults:defs serialQueue:serialQueue file:self]];
+                Worker *w = [[GuetzliWorker alloc] initWithDefaults:defs serialQueue:serialQueue file:self];
+                [worker_list addObject:w];
+                [jpegWorkers addObject:w];
                 lossyConverted = YES;
             }
-            if ([defs boolForKey:@"JpegOptimEnabled"]) [worker_list addObject:[[JpegoptimWorker alloc] initWithDefaults:defs file:self]];
-            if ([defs boolForKey:@"JpegTranEnabled"]) [worker_list addObject:[[JpegtranWorker alloc] initWithDefaults:defs file:self]];
+            if ([defs boolForKey:@"JpegOptimEnabled"]) {
+                Worker *w = [[JpegoptimWorker alloc] initWithDefaults:defs file:self];
+                [worker_list addObject:w];
+                [jpegWorkers addObject:w];
+            }
+            if ([defs boolForKey:@"JpegTranEnabled"]) {
+                Worker *w = [[JpegtranWorker alloc] initWithDefaults:defs file:self];
+                [worker_list addObject:w];
+                [jpegWorkers addObject:w];
+            }
+            for (Worker *w in jpegWorkers) {
+                [w addDependency:heicWorker];
+            }
             break;
         }
         default:
