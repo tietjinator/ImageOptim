@@ -1,7 +1,7 @@
 # SwiftOptim
 
-**TL;DR:** [ImageOptim](https://imageoptim.com)'s interface, rebuilt from scratch in native
-SwiftUI, running on ImageOptim's own unmodified compression backend — same lossless
+**TL;DR:** [ImageOptim](https://imageoptim.com)'s interface, rebuilt with Claude Code and Codex
+in native SwiftUI, running on ImageOptim's own unmodified compression backend — same lossless
 optimization, same third-party tools, same results, modern native UI on top, plus a few new
 features (filename date-tokens, a custom output folder / preserve-original option, HEIC → JPEG
 conversion, a Finder Services-menu entry — see "What's different" below).
